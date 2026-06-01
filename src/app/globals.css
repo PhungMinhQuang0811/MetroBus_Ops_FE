@@ -1,26 +1,144 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* MetroBus AFC Design System */
+  --background: #F6F8FB;
+  --foreground: #102A43;
+  --card: #FFFFFF;
+  --card-foreground: #102A43;
+  --popover: #FFFFFF;
+  --popover-foreground: #102A43;
+  --primary: #0066B3;
+  --primary-foreground: #FFFFFF;
+  --primary-dark: #004F8A;
+  --secondary: #00A878;
+  --secondary-foreground: #FFFFFF;
+  --muted: #9FB3C8;
+  --muted-foreground: #52606D;
+  --accent: #F5A524;
+  --accent-foreground: #102A43;
+  --destructive: #D92D20;
+  --destructive-foreground: #FFFFFF;
+  --border: #D9E2EC;
+  --input: #D9E2EC;
+  --ring: #0066B3;
+  --chart-1: #0066B3;
+  --chart-2: #00A878;
+  --chart-3: #F5A524;
+  --chart-4: #D92D20;
+  --chart-5: #9FB3C8;
+  --radius: 0.5rem;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #102A43;
+  --sidebar-primary: #0066B3;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F6F8FB;
+  --sidebar-accent-foreground: #102A43;
+  --sidebar-border: #D9E2EC;
+  --sidebar-ring: #0066B3;
+  
+  /* Status Colors */
+  --success: #00A878;
+  --warning: #F5A524;
+  --danger: #D92D20;
+  --info: #0066B3;
+}
+
+.dark {
+  --background: #102A43;
+  --foreground: #F6F8FB;
+  --card: #1B3A57;
+  --card-foreground: #F6F8FB;
+  --popover: #1B3A57;
+  --popover-foreground: #F6F8FB;
+  --primary: #3B9FD8;
+  --primary-foreground: #102A43;
+  --primary-dark: #0066B3;
+  --secondary: #00C896;
+  --secondary-foreground: #102A43;
+  --muted: #52606D;
+  --muted-foreground: #9FB3C8;
+  --accent: #F5A524;
+  --accent-foreground: #102A43;
+  --destructive: #F04438;
+  --destructive-foreground: #FFFFFF;
+  --border: #334E68;
+  --input: #334E68;
+  --ring: #3B9FD8;
+  --chart-1: #3B9FD8;
+  --chart-2: #00C896;
+  --chart-3: #F5A524;
+  --chart-4: #F04438;
+  --chart-5: #9FB3C8;
+  --sidebar: #1B3A57;
+  --sidebar-foreground: #F6F8FB;
+  --sidebar-primary: #3B9FD8;
+  --sidebar-primary-foreground: #102A43;
+  --sidebar-accent: #102A43;
+  --sidebar-accent-foreground: #F6F8FB;
+  --sidebar-border: #334E68;
+  --sidebar-ring: #3B9FD8;
+  
+  --success: #00C896;
+  --warning: #F5A524;
+  --danger: #F04438;
+  --info: #3B9FD8;
 }
 
 @theme inline {
+  --font-sans: 'Geist', 'Geist Fallback', sans-serif;
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback', monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-dark: var(--primary-dark);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    @apply bg-background text-foreground;
+  }
 }

@@ -1,0 +1,81 @@
+{
+  "name": "MetroBus Passenger",
+  "short_name": "MetroBus",
+  "description": "Ứng dụng vé xe buýt thông minh MetroBus - Quản lý thẻ, ví điện tử và lịch sử chuyến đi",
+  "start_url": "/app-login",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F6F8FB",
+  "theme_color": "#0066B3",
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "categories": ["transportation", "travel", "utilities"],
+  "lang": "vi",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Quét QR",
+      "short_name": "QR",
+      "description": "Hiển thị mã QR để quét vé",
+      "url": "/app/qr",
+      "icons": [{ "src": "/icons/qr-shortcut.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Nạp tiền",
+      "short_name": "Nạp tiền",
+      "description": "Nạp tiền vào ví điện tử",
+      "url": "/app/wallet",
+      "icons": [{ "src": "/icons/wallet-shortcut.png", "sizes": "96x96" }]
+    }
+  ]
+}
