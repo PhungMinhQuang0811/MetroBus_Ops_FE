@@ -5,8 +5,12 @@ import { AUTH_COOKIE_KEYS, AUTH_HEADER_KEYS } from "@/lib/auth/constants"
 const AUTH_API_BASE_URL = process.env.NEXT_PUBLIC_AUTH_API_BASE_URL || "http://localhost:8081/vdt"
 const REFRESH_TOKEN_ALLOWED_PATHS = new Set(["auth/refresh-token", "auth/logout"])
 
+function normalizePath(path: string) {
+  return path.replace(/^\//, "")
+}
+
 function createBackendUrl(path: string, search: string) {
-  const url = new URL(path.replace(/^\//, ""), `${AUTH_API_BASE_URL.replace(/\/$/, "")}/`)
+  const url = new URL(normalizePath(path), `${AUTH_API_BASE_URL.replace(/\/$/, "")}/`)
   url.search = search
 
   return url
@@ -26,8 +30,8 @@ function rewriteSetCookieHeader(header: string) {
     const [rawName] = attribute.split("=")
     const name = rawName.toLowerCase()
 
-    // Backend scopes cookies to /vdt. After this FE gateway, cookies are stored
-    // on localhost:3000 and must cover app routes such as /app-passenger.
+    // Backend scopes cookies to /vdt. After this BFF, cookies are stored on
+    // localhost:3000 and must cover app routes such as /app-passenger.
     if (name === "path") return
     if (name === "samesite") hasSameSite = true
 
@@ -48,7 +52,6 @@ function canAcceptCookie(path: string, header: string) {
   const cookieName = getCookieName(header)
 
   if (cookieName === AUTH_COOKIE_KEYS.XSRF_TOKEN) return true
-  if (cookieName === AUTH_COOKIE_KEYS.REFRESH_TOKEN) return REFRESH_TOKEN_ALLOWED_PATHS.has(path)
 
   return true
 }
@@ -87,14 +90,14 @@ function createBackendHeaders(request: NextRequest, path: string) {
     headers.set("Cookie", `${AUTH_COOKIE_KEYS.XSRF_TOKEN}=${xsrfToken}`)
   }
 
-  if (REFRESH_TOKEN_ALLOWED_PATHS.has(path)) {
+  if (REFRESH_TOKEN_ALLOWED_PATHS.has(normalizePath(path))) {
     headers.set("Cookie", request.headers.get("cookie") || "")
   }
 
   return headers
 }
 
-export async function handleAuthGatewayRequest(request: NextRequest, path: string) {
+export async function handleAuthBffRequest(request: NextRequest, path: string) {
   const body = request.method === "GET" || request.method === "HEAD" ? undefined : await request.text()
   const backendResponse = await fetch(createBackendUrl(path, request.nextUrl.search), {
     method: request.method,
@@ -115,12 +118,12 @@ export async function handleAuthGatewayRequest(request: NextRequest, path: strin
   return response
 }
 
-export interface AuthGatewayRouteContext {
-  params: Promise<{ gatewayPath: string[] }>
+export interface AuthBffRouteContext {
+  params: Promise<{ bffPath: string[] }>
 }
 
-export async function handleAuthGatewayCatchAllRequest(request: NextRequest, context: AuthGatewayRouteContext) {
-  const { gatewayPath } = await context.params
+export async function handleAuthBffCatchAllRequest(request: NextRequest, context: AuthBffRouteContext) {
+  const { bffPath } = await context.params
 
-  return handleAuthGatewayRequest(request, `/auth/${gatewayPath.join("/")}`)
+  return handleAuthBffRequest(request, `/auth/${bffPath.join("/")}`)
 }

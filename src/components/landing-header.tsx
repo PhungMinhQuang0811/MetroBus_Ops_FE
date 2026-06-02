@@ -13,7 +13,7 @@ export function LandingHeader() {
   useEffect(() => {
     const controller = new AbortController()
 
-    fetch("/gateways/auth/status", {
+    fetch("/bff/auth/status", {
       credentials: "include",
       signal: controller.signal,
     })

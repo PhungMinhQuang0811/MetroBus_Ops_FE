@@ -1,6 +1,5 @@
 "use client"
 
-import { PortalLayout } from "@/components/layouts/portal-layout"
 import {
   Banknote,
   BarChart3,
@@ -9,6 +8,9 @@ import {
   LayoutDashboard,
   TrendingUp,
 } from "lucide-react"
+
+import { AuthSessionProvider } from "@/components/auth/auth-session-provider"
+import { PortalLayout } from "@/components/layouts/portal-layout"
 import { ROUTES } from "@/lib/routes"
 
 const platformNavItems = [
@@ -26,13 +28,15 @@ export default function PlatformLayout({
   children: React.ReactNode
 }) {
   return (
-    <PortalLayout
-      portalName="Platform Manager"
-      navItems={platformNavItems}
-      userName="Admin Platform"
-      userRole="Quản lý nền tảng"
-    >
-      {children}
-    </PortalLayout>
+    <AuthSessionProvider>
+      <PortalLayout
+        portalName="Platform Manager"
+        navItems={platformNavItems}
+        userName="Admin Platform"
+        userRole="Quản lý nền tảng"
+      >
+        {children}
+      </PortalLayout>
+    </AuthSessionProvider>
   )
 }

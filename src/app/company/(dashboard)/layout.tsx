@@ -1,6 +1,5 @@
 "use client"
 
-import { PortalLayout } from "@/components/layouts/portal-layout"
 import {
   Banknote,
   BarChart3,
@@ -11,6 +10,9 @@ import {
   Receipt,
   Users,
 } from "lucide-react"
+
+import { AuthSessionProvider } from "@/components/auth/auth-session-provider"
+import { PortalLayout } from "@/components/layouts/portal-layout"
 import { ROUTES } from "@/lib/routes"
 
 const companyNavItems = [
@@ -30,13 +32,15 @@ export default function CompanyLayout({
   children: React.ReactNode
 }) {
   return (
-    <PortalLayout
-      portalName="Company Portal"
-      navItems={companyNavItems}
-      userName="Nguyen Manager"
-      userRole="Quản lý - Công ty ABC"
-    >
-      {children}
-    </PortalLayout>
+    <AuthSessionProvider>
+      <PortalLayout
+        portalName="Company Portal"
+        navItems={companyNavItems}
+        userName="Nguyen Manager"
+        userRole="Quản lý - Công ty ABC"
+      >
+        {children}
+      </PortalLayout>
+    </AuthSessionProvider>
   )
 }

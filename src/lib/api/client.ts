@@ -1,7 +1,8 @@
 import type { ApiResponse } from "./dto/common"
+import { API_ENDPOINTS } from "./endpoints"
 
 export const API_BASE_URLS = {
-  auth: "/gateways",
+  auth: "/bff",
   ticket: process.env.NEXT_PUBLIC_TICKET_API_BASE_URL || "http://localhost:8080/vdt",
 } as const
 
@@ -11,6 +12,7 @@ interface RequestOptions extends Omit<RequestInit, "body"> {
   body?: unknown
   query?: object
   service?: ApiService
+  skipAuthRefresh?: boolean
 }
 
 function appendQuery(url: string, query?: object) {
@@ -40,7 +42,7 @@ function createUrl(path: string, query?: object, service: ApiService = "ticket")
   return appendQuery(url.toString(), query)
 }
 
-function createInit({ body, query: _query, service: _service, headers, ...init }: RequestOptions): RequestInit {
+function createInit({ body, query: _query, service: _service, skipAuthRefresh: _skipAuthRefresh, headers, ...init }: RequestOptions): RequestInit {
   return {
     credentials: "include",
     ...init,
@@ -82,9 +84,37 @@ function redirectTo(path: string) {
   if (typeof window !== "undefined") window.location.href = path
 }
 
+let refreshTokenPromise: Promise<boolean> | null = null
+
+async function refreshAccessToken() {
+  if (!refreshTokenPromise) {
+    refreshTokenPromise = fetch(createUrl(API_ENDPOINTS.auth.refreshToken, undefined, "auth"), {
+      method: "POST",
+      credentials: "include",
+    })
+      .then((response) => response.ok)
+      .catch(() => false)
+      .finally(() => {
+        refreshTokenPromise = null
+      })
+  }
+
+  return refreshTokenPromise
+}
+
 export async function apiRequest<T>(path: string, options: RequestOptions = {}) {
   const response = await fetch(createUrl(path, options.query, options.service), createInit(options))
   const payload = await parseApiResponse<T>(response)
+
+  if (response.status === 401 && !options.skipAuthRefresh) {
+    const refreshed = await refreshAccessToken()
+
+    if (refreshed) {
+      return apiRequest<T>(path, { ...options, skipAuthRefresh: true })
+    }
+
+    redirectTo("/401")
+  }
 
   if (response.status === 401) redirectTo("/401")
   if (response.status === 403) redirectTo("/403")
@@ -96,6 +126,16 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}) 
 
 export async function apiRequestRaw(path: string, options: RequestOptions = {}) {
   const response = await fetch(createUrl(path, options.query, options.service), createInit(options))
+
+  if (response.status === 401 && !options.skipAuthRefresh) {
+    const refreshed = await refreshAccessToken()
+
+    if (refreshed) {
+      return apiRequestRaw(path, { ...options, skipAuthRefresh: true })
+    }
+
+    redirectTo("/401")
+  }
 
   if (response.status === 401) redirectTo("/401")
   if (response.status === 403) redirectTo("/403")

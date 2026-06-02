@@ -1,14 +1,10 @@
 "use client"
 
 import { ReactNode } from "react"
+import { AlertTriangle, Clock, CreditCard, LayoutDashboard, Package } from "lucide-react"
+
+import { AuthSessionProvider } from "@/components/auth/auth-session-provider"
 import { PortalLayout } from "@/components/layouts/portal-layout"
-import { 
-  LayoutDashboard, 
-  Clock, 
-  AlertTriangle, 
-  CreditCard, 
-  Package
-} from "lucide-react"
 import { ROUTES } from "@/lib/routes"
 
 const navItems = [
@@ -21,16 +17,18 @@ const navItems = [
 
 export default function StaffLayout({ children }: { children: ReactNode }) {
   return (
-    <PortalLayout
-      navItems={navItems}
-      portalName="Staff Portal"
-      userName="Nguyễn Văn B"
-      userRole="Nhân viên"
-      tenantName="Metro Line 1 Co."
-      shiftStatus="active"
-      shiftStation="Bến Thành"
-    >
-      {children}
-    </PortalLayout>
+    <AuthSessionProvider>
+      <PortalLayout
+        navItems={navItems}
+        portalName="Staff Portal"
+        userName="Nguyễn Văn B"
+        userRole="Nhân viên"
+        tenantName="Metro Line 1 Co."
+        shiftStatus="active"
+        shiftStation="Bến Thành"
+      >
+        {children}
+      </PortalLayout>
+    </AuthSessionProvider>
   )
 }
