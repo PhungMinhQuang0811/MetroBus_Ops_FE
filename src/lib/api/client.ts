@@ -1,25 +1,46 @@
 import type { ApiResponse } from "./dto/common"
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/vdt"
+export const API_BASE_URLS = {
+  auth: "/gateways",
+  ticket: process.env.NEXT_PUBLIC_TICKET_API_BASE_URL || "http://localhost:8080/vdt",
+} as const
+
+export type ApiService = keyof typeof API_BASE_URLS
 
 interface RequestOptions extends Omit<RequestInit, "body"> {
   body?: unknown
   query?: object
+  service?: ApiService
 }
 
-function createUrl(path: string, query?: object) {
-  const url = new URL(path.replace(/^\//, ""), `${apiBaseUrl.replace(/\/$/, "")}/`)
+function appendQuery(url: string, query?: object) {
+  if (!query) return url
 
-  if (query) {
-    Object.entries(query).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) url.searchParams.set(key, String(value))
-    })
+  const searchParams = new URLSearchParams()
+
+  Object.entries(query).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) searchParams.set(key, String(value))
+  })
+
+  const queryString = searchParams.toString()
+  if (!queryString) return url
+
+  return `${url}${url.includes("?") ? "&" : "?"}${queryString}`
+}
+
+function createUrl(path: string, query?: object, service: ApiService = "ticket") {
+  const apiBaseUrl = API_BASE_URLS[service]
+  const normalizedPath = path.replace(/^\//, "")
+
+  if (apiBaseUrl.startsWith("/")) {
+    return appendQuery(`${apiBaseUrl.replace(/\/$/, "")}/${normalizedPath}`, query)
   }
 
-  return url
+  const url = new URL(normalizedPath, `${apiBaseUrl.replace(/\/$/, "")}/`)
+  return appendQuery(url.toString(), query)
 }
 
-function createInit({ body, query: _query, headers, ...init }: RequestOptions): RequestInit {
+function createInit({ body, query: _query, service: _service, headers, ...init }: RequestOptions): RequestInit {
   return {
     credentials: "include",
     ...init,
@@ -41,9 +62,32 @@ export class ApiError<T = unknown> extends Error {
   }
 }
 
+async function parseApiResponse<T>(response: Response) {
+  const contentType = response.headers.get("content-type") || ""
+
+  if (contentType.includes("application/json")) {
+    return (await response.json()) as ApiResponse<T>
+  }
+
+  const message = (await response.text()) || response.statusText || "Request failed"
+
+  return {
+    code: response.status,
+    message,
+    result: null as T,
+  }
+}
+
+function redirectTo(path: string) {
+  if (typeof window !== "undefined") window.location.href = path
+}
+
 export async function apiRequest<T>(path: string, options: RequestOptions = {}) {
-  const response = await fetch(createUrl(path, options.query), createInit(options))
-  const payload = (await response.json()) as ApiResponse<T>
+  const response = await fetch(createUrl(path, options.query, options.service), createInit(options))
+  const payload = await parseApiResponse<T>(response)
+
+  if (response.status === 401) redirectTo("/401")
+  if (response.status === 403) redirectTo("/403")
 
   if (!response.ok) throw new ApiError(response.status, payload)
 
@@ -51,10 +95,13 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}) 
 }
 
 export async function apiRequestRaw(path: string, options: RequestOptions = {}) {
-  const response = await fetch(createUrl(path, options.query), createInit(options))
+  const response = await fetch(createUrl(path, options.query, options.service), createInit(options))
+
+  if (response.status === 401) redirectTo("/401")
+  if (response.status === 403) redirectTo("/403")
 
   if (!response.ok) {
-    const payload = (await response.json()) as ApiResponse<unknown>
+    const payload = await parseApiResponse<unknown>(response)
     throw new ApiError(response.status, payload)
   }
 

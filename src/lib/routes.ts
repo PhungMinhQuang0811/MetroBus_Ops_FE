@@ -9,6 +9,8 @@ export const ROUTES = {
   forgotPassword: "/forgot-password",
   terms: "/terms",
   privacy: "/privacy",
+  unauthorized: "/401",
+  forbidden: "/403",
 
   passenger: {
     home: "/app-passenger",
