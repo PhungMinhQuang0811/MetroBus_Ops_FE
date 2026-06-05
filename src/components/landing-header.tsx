@@ -31,40 +31,32 @@ export function LandingHeader() {
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
             <Bus className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="text-xl font-bold text-foreground">MetroBus</span>
+          <span className="text-xl font-bold text-foreground">MetroBus AFC</span>
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">
           <Link href={ROUTES.homeFeatures} className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-            Tính năng
+            Chức năng
           </Link>
           <Link href={ROUTES.homeSolutions} className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-            Giải pháp
-          </Link>
-          <Link href={ROUTES.guest.physicalCardOrder} className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-            Đặt thẻ
+            Vận hành
           </Link>
         </nav>
 
-        <div className="flex min-h-8 min-w-48 items-center justify-end gap-3">
+        <div className="flex min-h-8 min-w-40 items-center justify-end gap-3">
           {isAuthenticated === true && (
             <Button asChild size="sm">
-              <Link href={ROUTES.passenger.home}>
-                Vào ứng dụng
+              <Link href={ROUTES.operator.home}>
+                Vào hệ thống
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           )}
 
           {isAuthenticated === false && (
-            <>
-              <Button asChild variant="ghost" size="sm">
-                <Link href={ROUTES.login}>Đăng nhập</Link>
-              </Button>
-              <Button asChild size="sm">
-                <Link href={ROUTES.download}>Tải ứng dụng</Link>
-              </Button>
-            </>
+            <Button asChild size="sm">
+              <Link href={ROUTES.login}>Đăng nhập</Link>
+            </Button>
           )}
         </div>
       </div>

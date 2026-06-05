@@ -24,6 +24,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { StatusBadge } from "@/components/status-badge"
+import { identityApi } from "@/lib/api/services/identity"
+import { ROUTES } from "@/lib/routes"
 
 interface NavItem {
   href: string
@@ -54,6 +56,19 @@ export function PortalLayout({
 }: PortalLayoutProps) {
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return
+
+    setIsLoggingOut(true)
+
+    try {
+      await identityApi.logout()
+    } finally {
+      window.location.assign(ROUTES.login)
+    }
+  }
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -176,9 +191,16 @@ export function PortalLayout({
                 Đổi mật khẩu
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">
+              <DropdownMenuItem
+                className="text-destructive"
+                disabled={isLoggingOut}
+                onSelect={(event) => {
+                  event.preventDefault()
+                  void handleLogout()
+                }}
+              >
                 <LogOut className="mr-2 h-4 w-4" />
-                Đăng xuất
+                {isLoggingOut ? "Đang đăng xuất..." : "Đăng xuất"}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

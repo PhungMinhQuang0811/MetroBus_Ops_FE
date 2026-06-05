@@ -31,7 +31,7 @@ export function AuthSessionProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname()
 
   useEffect(() => {
-    if (pathname === ROUTES.passenger.login) return
+    if (pathname === ROUTES.login) return
 
     const intervalId = window.setInterval(refreshSession, getRefreshInterval())
 

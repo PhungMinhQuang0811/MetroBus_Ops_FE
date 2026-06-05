@@ -32,7 +32,7 @@ async function refreshAccessToken(request: NextRequest) {
 }
 
 export async function authRouteGuard(request: NextRequest) {
-  if (request.nextUrl.pathname === PUBLIC_PATHS.PASSENGER_LOGIN) {
+  if (request.nextUrl.pathname === PUBLIC_PATHS.LOGIN) {
     return NextResponse.next()
   }
 

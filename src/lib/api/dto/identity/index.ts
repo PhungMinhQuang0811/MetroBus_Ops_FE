@@ -1,3 +1,2 @@
-export { AuthNextStep } from "./constants"
-export type { LoginRequest, PhoneCheckRequest, SetPasswordRequest, VerifyOtpRequest } from "./request"
-export type { AuthResponse, PhoneCheckResponse, RegistrationOtpResponse } from "./response"
+export type { LoginRequest } from "./request"
+export type { AuthResponse } from "./response"

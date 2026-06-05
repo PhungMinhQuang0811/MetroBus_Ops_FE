@@ -1,222 +1,134 @@
-"use client"
-
 import Link from "next/link"
+import {
+  AlertTriangle,
+  BarChart3,
+  Boxes,
+  Building2,
+  CheckCircle2,
+  LayoutDashboard,
+  Map,
+  RadioTower,
+  Receipt,
+  ShieldCheck,
+} from "lucide-react"
+
+import { LandingHeader } from "@/components/landing-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { LandingHeader } from "@/components/landing-header"
+import { AUTH_ROLE_LABELS, AUTH_ROLES } from "@/lib/auth/constants"
 import { ROUTES } from "@/lib/routes"
-import { 
-  Bus, 
-  Smartphone, 
-  QrCode, 
-  Wallet, 
-  CreditCard, 
-  History,
-  Shield,
-  Zap,
-  Globe,
-  ArrowRight,
-  CheckCircle2,
-  Building2,
-  Users,
-  BarChart3
-} from "lucide-react"
 
 const features = [
   {
-    icon: QrCode,
-    title: "Thanh toán QR Code",
-    description: "Quét mã QR để lên xe nhanh chóng, không cần tiền mặt"
+    icon: LayoutDashboard,
+    title: "Tổng quan vận hành",
+    description: "Theo dõi giao dịch, sự cố và tình trạng thiết bị trong phạm vi đơn vị vận hành.",
   },
   {
-    icon: Wallet,
-    title: "Ví điện tử",
-    description: "Nạp tiền và quản lý số dư trực tiếp trên ứng dụng"
+    icon: Map,
+    title: "Danh mục tuyến và trạm",
+    description: "Quản lý cấu trúc mạng lưới, tuyến, trạm và điểm vận hành của đơn vị.",
   },
   {
-    icon: CreditCard,
-    title: "Thẻ thông minh",
-    description: "Hỗ trợ cả thẻ vật lý và thẻ ảo trên điện thoại"
+    icon: RadioTower,
+    title: "Giám sát thiết bị AFC",
+    description: "Theo dõi trạng thái trực tuyến, ngoại tuyến, bảo trì và vô hiệu hóa từ dữ liệu heartbeat.",
   },
   {
-    icon: History,
-    title: "Lịch sử chuyến đi",
-    description: "Theo dõi tất cả chuyến đi và giao dịch của bạn"
+    icon: Receipt,
+    title: "Tra cứu giao dịch",
+    description: "Lọc, đối chiếu và xem chi tiết lượt quét phục vụ công tác vận hành.",
   },
   {
-    icon: Shield,
-    title: "Bảo mật cao",
-    description: "Dữ liệu được mã hóa và bảo vệ an toàn"
+    icon: AlertTriangle,
+    title: "Theo dõi sự cố",
+    description: "Ghi nhận và xử lý sự cố thiết bị theo phạm vi trạm hoặc toàn đơn vị.",
   },
   {
-    icon: Zap,
-    title: "Xử lý tức thì",
-    description: "Giao dịch được xử lý trong vài giây"
-  }
+    icon: Boxes,
+    title: "Gói cấu hình vận hành",
+    description: "Tạo và phát hành gói cấu hình vận hành xuống hệ thống cấp 3.",
+  },
 ]
 
-const solutions = [
-  {
-    icon: Smartphone,
-    title: "Hành khách",
-    description: "Ứng dụng di động quản lý vé, ví và chuyến đi",
-    href: ROUTES.passenger.login,
-    color: "bg-primary"
-  },
-  {
-    icon: Building2,
-    title: "Doanh nghiệp",
-    description: "Quản lý thẻ nhân viên và theo dõi chi phí",
-    href: ROUTES.login,
-    color: "bg-secondary"
-  },
-  {
-    icon: Users,
-    title: "Đơn vị vận hành",
-    description: "Quản lý tuyến, trạm và biểu giá",
-    href: ROUTES.login,
-    color: "bg-accent"
-  },
-  {
-    icon: BarChart3,
-    title: "Nền tảng",
-    description: "Đối soát và quản lý đa đơn vị vận hành",
-    href: ROUTES.login,
-    color: "bg-primary"
-  }
+const roles = [
+  `${AUTH_ROLE_LABELS[AUTH_ROLES.OPERATOR_ADMIN]} quản lý tài khoản nội bộ và phân quyền trong đơn vị.`,
+  `${AUTH_ROLE_LABELS[AUTH_ROLES.OPERATOR_MANAGER]} theo dõi vận hành cấp 4 và điều phối dữ liệu.`,
+  `${AUTH_ROLE_LABELS[AUTH_ROLES.STATION_OPERATOR]} giám sát thiết bị, giao dịch và sự cố tại trạm.`,
 ]
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <LandingHeader />
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 to-background">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
-          <div className="grid items-center gap-12 lg:grid-cols-2">
-            <div className="text-center lg:text-left">
-              <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-                <span className="text-primary">Vé xe buýt & Metro</span>
-                <br />
-                thông minh
-              </h1>
-              <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-                Hệ thống thanh toán tự động hiện đại cho giao thông công cộng. 
-                Quét QR, chạm thẻ hoặc sử dụng ví điện tử - tất cả trong một ứng dụng.
-              </p>
-              <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center lg:justify-start">
-                <Link href={ROUTES.download}>
-                  <Button size="lg" className="w-full sm:w-auto">
-                    <Smartphone className="mr-2 h-5 w-5" />
-                    Bắt đầu ngay
-                  </Button>
-                </Link>
-                <Link href={ROUTES.guest.physicalCardOrder}>
-                  <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                    Đặt thẻ vật lý
-                  </Button>
-                </Link>
-              </div>
+      <section className="border-b bg-muted/30">
+        <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:px-8 lg:py-24">
+          <div>
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1 text-sm text-muted-foreground">
+              <ShieldCheck className="h-4 w-4 text-primary" />
+              AFC Level 3 / Level 4 Operations
+            </div>
+            <h1 className="max-w-3xl text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+              Trung tâm quản trị đơn vị vận hành MetroBus
+            </h1>
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">
+              Hệ thống tập trung cho quản trị tuyến, trạm, thiết bị AFC, giao dịch vận hành,
+              sự cố, gói cấu hình, lô dữ liệu và nhật ký trong phạm vi đơn vị khai thác.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Button asChild size="lg">
+                <Link href={ROUTES.login}>Đăng nhập hệ thống</Link>
+              </Button>
+              <Button asChild variant="outline" size="lg">
+                <Link href={ROUTES.operator.home}>Mở trang quản trị</Link>
+              </Button>
+            </div>
+          </div>
 
-              {/* Trust badges */}
-              <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground lg:justify-start">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-secondary" />
-                  <span>Miễn phí đăng ký</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-secondary" />
-                  <span>Hỗ trợ 24/7</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-secondary" />
-                  <span>An toàn & Bảo mật</span>
-                </div>
+          <div className="rounded-lg border bg-card p-6 shadow-sm">
+            <div className="flex items-center gap-3 border-b pb-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <Building2 className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="font-semibold text-foreground">Phạm vi đơn vị vận hành</p>
+                <p className="text-sm text-muted-foreground">Nghiệp vụ AFC cấp 3 và cấp 4</p>
               </div>
             </div>
-
-            {/* Phone mockup */}
-            <div className="relative flex justify-center lg:justify-end">
-              <div className="relative">
-                {/* Phone frame */}
-                <div className="relative h-[500px] w-[250px] rounded-[40px] border-4 border-foreground/10 bg-card p-2 shadow-2xl">
-                  <div className="absolute left-1/2 top-4 h-6 w-20 -translate-x-1/2 rounded-full bg-foreground/10" />
-                  <div className="h-full w-full overflow-hidden rounded-[32px] bg-primary/10">
-                    {/* App screen content */}
-                    <div className="flex h-full flex-col">
-                      <div className="bg-primary p-4 text-primary-foreground">
-                        <p className="text-xs opacity-80">Xin chào,</p>
-                        <p className="font-semibold">Nguyễn Văn A</p>
-                      </div>
-                      <div className="flex-1 p-4 space-y-4">
-                        <div className="rounded-xl bg-card p-4 shadow-sm">
-                          <p className="text-xs text-muted-foreground">Số dư ví</p>
-                          <p className="text-2xl font-bold text-foreground">150.000đ</p>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="flex flex-col items-center gap-1 rounded-lg bg-card p-3">
-                            <QrCode className="h-5 w-5 text-primary" />
-                            <span className="text-xs">QR Code</span>
-                          </div>
-                          <div className="flex flex-col items-center gap-1 rounded-lg bg-card p-3">
-                            <Wallet className="h-5 w-5 text-primary" />
-                            <span className="text-xs">Nạp tiền</span>
-                          </div>
-                          <div className="flex flex-col items-center gap-1 rounded-lg bg-card p-3">
-                            <History className="h-5 w-5 text-primary" />
-                            <span className="text-xs">Lịch sử</span>
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <p className="text-xs font-medium text-muted-foreground">Chuyến đi gần đây</p>
-                          <div className="rounded-lg bg-card p-3 shadow-sm">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="text-sm font-medium">Tuyến 01</p>
-                                <p className="text-xs text-muted-foreground">Bến Thành - Bình Tây</p>
-                              </div>
-                              <p className="text-sm font-medium text-secondary">-7.000đ</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+            <div className="mt-5 space-y-4">
+              {roles.map((role) => (
+                <div key={role} className="flex gap-3 text-sm text-muted-foreground">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <span>{role}</span>
                 </div>
-                {/* Decorative elements */}
-                <div className="absolute -left-4 top-20 h-20 w-20 rounded-full bg-primary/20 blur-2xl" />
-                <div className="absolute -right-4 bottom-20 h-24 w-24 rounded-full bg-secondary/20 blur-2xl" />
-              </div>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-foreground sm:text-4xl">
-              Tất cả trong một ứng dụng
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-              MetroBus AFC mang đến trải nghiệm di chuyển thuận tiện với đầy đủ tính năng hiện đại
+      <section id="features" className="py-18">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="max-w-2xl">
+            <h2 className="text-3xl font-bold text-foreground">Chức năng trong phạm vi</h2>
+            <p className="mt-3 text-muted-foreground">
+              Tập trung vào nghiệp vụ vận hành, không bao gồm ứng dụng hành khách, ví,
+              thanh toán, phân chia bù trừ hay quyết toán.
             </p>
           </div>
 
-          <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((feature) => {
               const Icon = feature.icon
               return (
-                <Card key={feature.title} className="border-0 bg-card/50 shadow-sm transition-all hover:shadow-md">
-                  <CardContent className="p-6">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                      <Icon className="h-6 w-6 text-primary" />
+                <Card key={feature.title} className="shadow-sm">
+                  <CardContent className="p-5">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
+                      <Icon className="h-5 w-5" />
                     </div>
-                    <h3 className="mt-4 text-lg font-semibold text-foreground">{feature.title}</h3>
-                    <p className="mt-2 text-sm text-muted-foreground">{feature.description}</p>
+                    <h3 className="mt-4 font-semibold text-foreground">{feature.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{feature.description}</p>
                   </CardContent>
                 </Card>
               )
@@ -225,120 +137,24 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Solutions Section */}
-      <section id="solutions" className="bg-card py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-foreground sm:text-4xl">
-              Giải pháp cho mọi đối tượng
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-              Từ hành khách cá nhân đến doanh nghiệp và đơn vị vận hành
+      <section id="solutions" className="border-t bg-card py-16">
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Sẵn sàng triển khai theo tài liệu mới</h2>
+            <p className="mt-2 max-w-2xl text-muted-foreground">
+              Mã nguồn hiện tập trung vào hai phân hệ chính: quản trị đơn vị cấp 4 và vận hành trạm cấp 3.
             </p>
           </div>
-
-          <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {solutions.map((solution) => {
-              const Icon = solution.icon
-              return (
-                <Link key={solution.title} href={solution.href}>
-                  <Card className="group h-full cursor-pointer transition-all hover:shadow-lg hover:border-primary/50">
-                    <CardContent className="p-6">
-                      <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${solution.color}`}>
-                        <Icon className="h-6 w-6 text-white" />
-                      </div>
-                      <h3 className="mt-4 text-lg font-semibold text-foreground">{solution.title}</h3>
-                      <p className="mt-2 text-sm text-muted-foreground">{solution.description}</p>
-                      <div className="mt-4 flex items-center text-sm font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
-                        Truy cập
-                        <ArrowRight className="ml-1 h-4 w-4" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              )
-            })}
+          <div className="flex gap-3">
+            <Button asChild>
+              <Link href={ROUTES.operator.home}>Quản trị đơn vị</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href={ROUTES.station.home}>Vận hành trạm</Link>
+            </Button>
           </div>
         </div>
       </section>
-
-      {/* CTA Section */}
-      <section className="bg-primary py-20">
-        <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-primary-foreground sm:text-4xl">
-            Sẵn sàng trải nghiệm?
-          </h2>
-          <p className="mx-auto mt-4 max-w-xl text-primary-foreground/80">
-            Quét QR bằng điện thoại để mở Passenger PWA và thêm vào màn hình chính
-          </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Link href={ROUTES.download}>
-              <Button size="lg" variant="secondary">
-                <Smartphone className="mr-2 h-5 w-5" />
-                Tải ứng dụng
-              </Button>
-            </Link>
-            <Link href={ROUTES.guest.physicalCardOrder}>
-              <Button
-                size="lg"
-                className="border border-primary-foreground bg-primary-foreground text-primary shadow-sm hover:bg-primary-foreground/90 hover:text-primary"
-              >
-                <CreditCard className="mr-2 h-5 w-5" />
-                Đặt thẻ vật lý
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t bg-background py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            <div>
-              <Link href={ROUTES.home} className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                  <Bus className="h-4 w-4 text-primary-foreground" />
-                </div>
-                <span className="text-lg font-bold text-foreground">MetroBus</span>
-              </Link>
-              <p className="mt-4 text-sm text-muted-foreground">
-                Hệ thống vé xe buýt & Metro và thanh toán tự động thông minh
-              </p>
-            </div>
-
-            <div>
-              <h3 className="font-semibold text-foreground">Sản phẩm</h3>
-              <ul className="mt-4 space-y-2 text-sm">
-                <li><Link href={ROUTES.download} className="text-muted-foreground hover:text-foreground">Ứng dụng di động</Link></li>
-                <li><Link href={ROUTES.guest.physicalCardOrder} className="text-muted-foreground hover:text-foreground">Thẻ vật lý</Link></li>
-                <li><Link href={ROUTES.guest.renewSubscription} className="text-muted-foreground hover:text-foreground">Vé tháng</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="font-semibold text-foreground">Doanh nghiệp</h3>
-              <ul className="mt-4 space-y-2 text-sm">
-                <li><Link href={ROUTES.login} className="text-muted-foreground hover:text-foreground">Đăng nhập</Link></li>
-                <li><Link href={ROUTES.login} className="text-muted-foreground hover:text-foreground">Quản lý thẻ</Link></li>
-                <li><Link href={ROUTES.login} className="text-muted-foreground hover:text-foreground">Báo cáo</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="font-semibold text-foreground">Hỗ trợ</h3>
-              <ul className="mt-4 space-y-2 text-sm">
-                <li><span className="text-muted-foreground">Hotline: 1900 1234</span></li>
-                <li><span className="text-muted-foreground">Email: support@metrobus.vn</span></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="mt-12 border-t pt-8 text-center text-sm text-muted-foreground">
-            <p>&copy; 2024 MetroBus AFC. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
     </div>
   )
 }
