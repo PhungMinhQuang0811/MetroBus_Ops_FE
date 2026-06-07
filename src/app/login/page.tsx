@@ -1,7 +1,6 @@
 "use client"
 
 import { FormEvent, useState } from "react"
-import Link from "next/link"
 import { Bus, Eye, EyeOff, LogIn } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -113,11 +112,9 @@ export default function LoginPage() {
           </CardContent>
         </Card>
 
-        <div className="mt-4 text-center">
-          <Link href={ROUTES.home} className="text-sm text-muted-foreground hover:text-foreground">
-            Quay về trang chủ
-          </Link>
-        </div>
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          Hệ thống nội bộ dành cho nhân sự vận hành Cấp 3/Cấp 4.
+        </p>
       </div>
     </div>
   )

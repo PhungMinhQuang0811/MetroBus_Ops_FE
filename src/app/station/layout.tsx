@@ -1,7 +1,7 @@
 "use client"
 
 import { ReactNode } from "react"
-import { AlertTriangle, BarChart3, LayoutDashboard, RadioTower, Receipt } from "lucide-react"
+import { LayoutDashboard } from "lucide-react"
 
 import { AuthSessionProvider } from "@/components/auth/auth-session-provider"
 import { PortalLayout } from "@/components/layouts/portal-layout"
@@ -10,10 +10,6 @@ import { ROUTES } from "@/lib/routes"
 
 const navItems = [
   { href: ROUTES.station.home, icon: LayoutDashboard, label: "Tổng quan" },
-  { href: ROUTES.station.deviceStatus, icon: RadioTower, label: "Trạng thái thiết bị" },
-  { href: ROUTES.station.transactions, icon: Receipt, label: "Giao dịch" },
-  { href: ROUTES.station.incidents, icon: AlertTriangle, label: "Sự cố" },
-  { href: ROUTES.station.reports, icon: BarChart3, label: "Báo cáo" },
 ]
 
 export default function StationLayout({ children }: { children: ReactNode }) {
