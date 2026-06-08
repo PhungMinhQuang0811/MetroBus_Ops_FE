@@ -1,2 +1,2 @@
-export type { LoginRequest } from "./request"
-export type { AuthResponse } from "./response"
+export type { ChangePasswordRequest, LoginRequest } from "./request"
+export type { AuthResponse, PasswordStatus } from "./response"

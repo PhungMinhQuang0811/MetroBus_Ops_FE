@@ -4,6 +4,7 @@ import { ReactNode, useEffect } from "react"
 import { usePathname } from "next/navigation"
 
 import { identityApi } from "@/lib/api"
+import { getStoredPasswordStatus, requiresPasswordChange } from "@/lib/auth/password-status"
 import { ROUTES } from "@/lib/routes"
 
 const DEFAULT_REFRESH_INTERVAL_MS = 55 * 60 * 1000
@@ -32,6 +33,11 @@ export function AuthSessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (pathname === ROUTES.login) return
+
+    if (pathname !== ROUTES.changePassword && requiresPasswordChange(getStoredPasswordStatus())) {
+      window.location.assign(ROUTES.changePassword)
+      return
+    }
 
     const intervalId = window.setInterval(refreshSession, getRefreshInterval())
 

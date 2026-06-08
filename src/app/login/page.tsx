@@ -8,11 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { identityApi } from "@/lib/api/services/identity"
+import { clearStoredPasswordStatus, requiresPasswordChange, storePasswordStatus } from "@/lib/auth/password-status"
 import { getApiErrorMessage } from "@/lib/messages/api-errors"
 import { ROUTES } from "@/lib/routes"
 
 export default function LoginPage() {
-  const [identifier, setidentifier] = useState("")
+  const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -21,7 +22,7 @@ export default function LoginPage() {
   const handleLogin = async (event: FormEvent) => {
     event.preventDefault()
 
-    if (!identifier.trim() || !password) {
+    if (!username.trim() || !password) {
       setError("Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.")
       return
     }
@@ -30,7 +31,22 @@ export default function LoginPage() {
     setError("")
 
     try {
-      await identityApi.login({ identifier: identifier.trim(), password })
+      const response = await identityApi.login({ username: username.trim(), password })
+      const { passwordStatus } = response.result
+
+      storePasswordStatus(passwordStatus)
+
+      if (requiresPasswordChange(passwordStatus)) {
+        window.location.assign(ROUTES.changePassword)
+        return
+      }
+
+      if (passwordStatus === "NEED_TO_RESET") {
+        clearStoredPasswordStatus()
+        setError("Tài khoản của bạn cần quản trị viên đặt lại mật khẩu.")
+        return
+      }
+
       window.location.assign(ROUTES.operator.home)
     } catch (error) {
       setError(getApiErrorMessage(error))
@@ -56,17 +72,17 @@ export default function LoginPage() {
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="identifier">Tên đăng nhập</Label>
+                <Label htmlFor="username">Tên đăng nhập</Label>
                 <Input
-                  id="identifier"
+                  id="username"
                   type="text"
-                  value={identifier}
+                  value={username}
                   onChange={(event) => {
-                    setidentifier(event.target.value)
+                    setUsername(event.target.value)
                     setError("")
                   }}
                   placeholder="manager01"
-                  autoComplete="identifier"
+                  autoComplete="username"
                 />
               </div>
 

@@ -5,11 +5,13 @@ export const ROUTES = {
   homeFeatures: "/#features",
   homeSolutions: "/#solutions",
   login: "/login",
+  changePassword: "/change-password",
   unauthorized: "/401",
   forbidden: "/403",
 
   operator: {
     home: "/operator",
+    accounts: "/operator/accounts",
   },
 
   station: {

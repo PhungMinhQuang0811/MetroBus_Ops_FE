@@ -1,4 +1,10 @@
 export interface LoginRequest {
-  identifier: string
+  username: string
   password: string
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
 }

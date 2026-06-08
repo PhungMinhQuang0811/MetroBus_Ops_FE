@@ -42,15 +42,21 @@ function createUrl(path: string, query?: object, service: ApiService = "ticket")
   return appendQuery(url.toString(), query)
 }
 
+function isFormDataBody(body: unknown): body is FormData {
+  return typeof FormData !== "undefined" && body instanceof FormData
+}
+
 function createInit({ body, query: _query, service: _service, skipAuthRefresh: _skipAuthRefresh, headers, ...init }: RequestOptions): RequestInit {
+  const isFormData = isFormDataBody(body)
+
   return {
     credentials: "include",
     ...init,
     headers: {
-      ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+      ...(body === undefined || isFormData ? {} : { "Content-Type": "application/json" }),
       ...headers,
     },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: body === undefined ? undefined : isFormData ? body : JSON.stringify(body),
   }
 }
 
@@ -82,6 +88,10 @@ async function parseApiResponse<T>(response: Response) {
 
 function redirectTo(path: string) {
   if (typeof window !== "undefined") window.location.href = path
+}
+
+function shouldRedirectForbidden(payload: ApiResponse<unknown>) {
+  return payload.code !== 4010 && payload.code !== 4011
 }
 
 let refreshTokenPromise: Promise<boolean> | null = null
@@ -117,7 +127,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}) 
   }
 
   if (response.status === 401) redirectTo("/401")
-  if (response.status === 403) redirectTo("/403")
+  if (response.status === 403 && shouldRedirectForbidden(payload)) redirectTo("/403")
 
   if (!response.ok) throw new ApiError(response.status, payload)
 
@@ -126,6 +136,13 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}) 
 
 export async function apiRequestRaw(path: string, options: RequestOptions = {}) {
   const response = await fetch(createUrl(path, options.query, options.service), createInit(options))
+  let payload: ApiResponse<unknown> | null = null
+
+  const getPayload = async () => {
+    payload ??= await parseApiResponse<unknown>(response.clone())
+
+    return payload
+  }
 
   if (response.status === 401 && !options.skipAuthRefresh) {
     const refreshed = await refreshAccessToken()
@@ -138,11 +155,10 @@ export async function apiRequestRaw(path: string, options: RequestOptions = {}) 
   }
 
   if (response.status === 401) redirectTo("/401")
-  if (response.status === 403) redirectTo("/403")
+  if (response.status === 403 && shouldRedirectForbidden(await getPayload())) redirectTo("/403")
 
   if (!response.ok) {
-    const payload = await parseApiResponse<unknown>(response)
-    throw new ApiError(response.status, payload)
+    throw new ApiError(response.status, await getPayload())
   }
 
   return response
