@@ -5,17 +5,41 @@ export const ROUTES = {
   homeFeatures: "/#features",
   homeSolutions: "/#solutions",
   login: "/login",
+  forgotPassword: "/forgot-password",
   changePassword: "/change-password",
   unauthorized: "/401",
   forbidden: "/403",
 
+  admin: {
+    home: "/admin",
+    accounts: "/admin/accounts",
+    audit: "/admin",
+  },
+
+  manager: {
+    home: "/manager",
+    routes: "/manager/routes",
+    stations: "/manager/stations",
+    devices: "/manager/devices",
+    deviceMonitoring: "/manager/devices/monitoring",
+    deviceIncidents: "/manager/devices/incidents",
+    transactions: "/manager/transactions",
+    ticketData: "/manager/ticket-data",
+    controlPackages: "/manager/control-packages",
+    controlSyncs: "/manager/control-syncs",
+    dataBatches: "/manager/data-batches",
+  },
+
   operator: {
     home: "/operator",
-    accounts: "/operator/accounts",
   },
 
   station: {
     home: "/station",
+    deviceMonitoring: "/station/devices/monitoring",
+    deviceIncidents: "/station/devices/incidents",
+    transactions: "/station/transactions",
+    controlSyncs: "/station/control-syncs",
   },
 } as const satisfies Record<string, unknown>
 

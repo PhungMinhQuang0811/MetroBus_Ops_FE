@@ -13,6 +13,7 @@ interface RequestOptions extends Omit<RequestInit, "body"> {
   query?: object
   service?: ApiService
   skipAuthRefresh?: boolean
+  skipForbiddenRedirect?: boolean
 }
 
 function appendQuery(url: string, query?: object) {
@@ -46,7 +47,15 @@ function isFormDataBody(body: unknown): body is FormData {
   return typeof FormData !== "undefined" && body instanceof FormData
 }
 
-function createInit({ body, query: _query, service: _service, skipAuthRefresh: _skipAuthRefresh, headers, ...init }: RequestOptions): RequestInit {
+function createInit({
+  body,
+  query: _query,
+  service: _service,
+  skipAuthRefresh: _skipAuthRefresh,
+  skipForbiddenRedirect: _skipForbiddenRedirect,
+  headers,
+  ...init
+}: RequestOptions): RequestInit {
   const isFormData = isFormDataBody(body)
 
   return {
@@ -127,7 +136,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}) 
   }
 
   if (response.status === 401) redirectTo("/401")
-  if (response.status === 403 && shouldRedirectForbidden(payload)) redirectTo("/403")
+  if (response.status === 403 && !options.skipForbiddenRedirect && shouldRedirectForbidden(payload)) redirectTo("/403")
 
   if (!response.ok) throw new ApiError(response.status, payload)
 
@@ -155,7 +164,7 @@ export async function apiRequestRaw(path: string, options: RequestOptions = {}) 
   }
 
   if (response.status === 401) redirectTo("/401")
-  if (response.status === 403 && shouldRedirectForbidden(await getPayload())) redirectTo("/403")
+  if (response.status === 403 && !options.skipForbiddenRedirect && shouldRedirectForbidden(await getPayload())) redirectTo("/403")
 
   if (!response.ok) {
     throw new ApiError(response.status, await getPayload())

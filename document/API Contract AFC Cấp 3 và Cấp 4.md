@@ -226,7 +226,7 @@ Set-Cookie: refresh_token=; HttpOnly; Max-Age=0; Path=/auth/logout
 
 #### API-AUTH-004 - List Accounts
 
-`GET /account/list-accounts?keyword=&role=&isActive=&page=0&size=20`
+`GET /account/list-accounts?keyword=&role=&isActive=&passwordStatus=&page=0&size=20`
 
 Permission: `ACCOUNT_READ`.
 
@@ -237,6 +237,7 @@ Query params:
 | `keyword` | string | No | Trim trước khi xử lý; nếu rỗng thì bỏ qua; tối đa 50 ký tự; tìm kiếm không phân biệt hoa thường theo `username` |
 | `role` | string | No | Trim trước khi xử lý; nếu rỗng thì bỏ qua; nếu truyền vào phải là role đang tồn tại |
 | `isActive` | boolean | No | Nếu không truyền thì bỏ qua điều kiện trạng thái |
+| `passwordStatus` | string | No | Trim trước khi xử lý; nếu rỗng thì bỏ qua; nếu truyền vào phải thuộc `NORMAL`, `NEED_TO_CHANGE`, `NEED_TO_RESET` |
 | `page` | integer | No | Mặc định `0`; phải `>= 0` |
 | `size` | integer | No | Mặc định `20`; phải trong khoảng `1..100` |
 
@@ -272,6 +273,7 @@ Lỗi chính:
 | `INVALID_PAGE_REQUEST` | Page must be >= 0 and size must be between 1 and 100 | 400 |
 | `INVALID_SEARCH_KEYWORD` | Search keyword is too long | 400 |
 | `INVALID_ROLE_SELECTION` | Invalid operator role selection | 400 |
+| `INVALID_PASSWORD_STATUS` | Invalid password status | 400 |
 
 #### API-AUTH-005 - Create Account
 
@@ -561,9 +563,11 @@ Lỗi chính:
 
 #### API-AUTH-010 - Change Password
 
-`POST /auth/change-password`
+`POST /account/change-password`
 
 Permission: Authenticated.
+
+Ghi chú: API đổi mật khẩu thuộc `auth-ops-service` nhưng không đặt dưới `/auth`. Backend lấy account hiện tại từ security context (`SecurityUtils.getCurrentAccountId()`), không nhận `accountId` từ request.
 
 Request:
 
@@ -574,6 +578,14 @@ Request:
   "confirmPassword": "NewPassword@123"
 }
 ```
+
+Validation:
+
+| Field | Type | Required | Validation |
+| --- | --- | --- | --- |
+| `currentPassword` | string | Yes | Không được rỗng |
+| `newPassword` | string | Yes | Không được rỗng; tối thiểu 9 ký tự; có cả chữ và số |
+| `confirmPassword` | string | Yes | Không được rỗng; phải trùng `newPassword` |
 
 Response:
 
@@ -587,19 +599,202 @@ Response:
 }
 ```
 
+Luồng:
+
+1. JWT filter xác thực access token/cookie và set security context.
+2. Nếu account đang có `passwordStatus = NEED_TO_CHANGE`, endpoint `/account/change-password` vẫn được phép gọi để user tự đổi mật khẩu.
+3. Service lấy `accountId` hiện tại từ `SecurityUtils.getCurrentAccountId()`.
+4. Validate request body.
+5. Load account, kiểm tra account còn active.
+6. So khớp `currentPassword` với password hash hiện tại.
+7. Hash `newPassword`, cập nhật password và set `passwordStatus = NORMAL`.
+8. Trả trạng thái mật khẩu mới. API không phát hành lại access token/refresh token trong response.
+
+Lỗi chính:
+
+| Code | Message | HTTP |
+| --- | --- | --- |
+| `UNAUTHENTICATED` | Unauthenticated access | 401 |
+| `FIELD_REQUIRED` | `{fieldName} is required` | 400 |
+| `INVALID_PASSWORD` | Password must be at least 9 characters and contain both letters and numbers | 400 |
+| `PASSWORD_CONFIRMATION_MISMATCH` | New password and confirm password do not match | 400 |
+| `CURRENT_PASSWORD_INCORRECT` | Current password is incorrect | 400 |
+| `ACCOUNT_DISABLED` | Your account is currently disabled or inactive. | 403 |
+| `USER_NOT_FOUND` | User not found | 404 |
+
+Response theo case để FE ghép:
+
+**1. Đổi mật khẩu thành công**
+
+HTTP `200`
+
+```json
+{
+  "code": 1000,
+  "message": "Success",
+  "result": {
+    "passwordStatus": "NORMAL"
+  }
+}
+```
+
+FE action đề xuất: đóng form đổi mật khẩu, clear dữ liệu nhập, cho phép user tiếp tục dùng hệ thống. Nếu trước đó user có `passwordStatus = NEED_TO_CHANGE`, FE bỏ trạng thái bắt buộc đổi mật khẩu.
+
+**2. Chưa đăng nhập, thiếu access token hoặc token không set được security context**
+
+HTTP `401`
+
+```json
+{
+  "code": 4002,
+  "message": "Unauthenticated access",
+  "result": null
+}
+```
+
+FE action đề xuất: điều hướng về màn hình login hoặc gọi refresh token nếu flow hiện tại cho phép.
+
+**3. Thiếu `currentPassword`**
+
+HTTP `400`
+
+```json
+{
+  "code": 2000,
+  "message": "currentPassword is required",
+  "result": null
+}
+```
+
+FE action đề xuất: hiển thị lỗi tại field `currentPassword`.
+
+**4. Thiếu `newPassword`**
+
+HTTP `400`
+
+```json
+{
+  "code": 2000,
+  "message": "newPassword is required",
+  "result": null
+}
+```
+
+FE action đề xuất: hiển thị lỗi tại field `newPassword`.
+
+**5. Thiếu `confirmPassword`**
+
+HTTP `400`
+
+```json
+{
+  "code": 2000,
+  "message": "confirmPassword is required",
+  "result": null
+}
+```
+
+FE action đề xuất: hiển thị lỗi tại field `confirmPassword`.
+
+**6. `newPassword` không đạt rule mật khẩu**
+
+HTTP `400`
+
+```json
+{
+  "code": 2001,
+  "message": "Password must be at least 9 characters and contain both letters and numbers",
+  "result": null
+}
+```
+
+FE action đề xuất: hiển thị lỗi tại field `newPassword`. Rule hiện tại: tối thiểu 9 ký tự, có ít nhất 1 chữ và 1 số.
+
+**7. `confirmPassword` không trùng `newPassword`**
+
+HTTP `400`
+
+```json
+{
+  "code": 2006,
+  "message": "New password and confirm password do not match",
+  "result": null
+}
+```
+
+FE action đề xuất: hiển thị lỗi tại field `confirmPassword`.
+
+**8. `currentPassword` không đúng**
+
+HTTP `400`
+
+```json
+{
+  "code": 2007,
+  "message": "Current password is incorrect",
+  "result": null
+}
+```
+
+FE action đề xuất: hiển thị lỗi tại field `currentPassword`; không clear `newPassword`/`confirmPassword` nếu FE muốn giữ trải nghiệm nhập liệu.
+
+**9. Account đã bị khóa hoặc inactive**
+
+HTTP `403`
+
+```json
+{
+  "code": 4006,
+  "message": "Your account is currently disabled or inactive.",
+  "result": null
+}
+```
+
+FE action đề xuất: logout local state và báo user liên hệ quản trị viên.
+
+**10. Account trong token không còn tồn tại**
+
+HTTP `404`
+
+```json
+{
+  "code": 3007,
+  "message": "User not found",
+  "result": null
+}
+```
+
+FE action đề xuất: logout local state và yêu cầu đăng nhập lại.
+
+**11. Thiếu hoặc sai CSRF token**
+
+HTTP `403`
+
+```json
+{
+  "code": 4009,
+  "message": "Missing or invalid CSRF token",
+  "result": null
+}
+```
+
+FE action đề xuất: lấy lại CSRF token theo flow hiện tại rồi submit lại request.
+
 ### UC04 - Quên Mật Khẩu
 
-#### API-AUTH-011 - Admin Reset Password
+#### API-AUTH-011 - Request Password Reset
 
-`POST /account/reset-account-password/{accountId}`
+`POST /auth/forgot-password`
 
-Permission: `ACCOUNT_WRITE`.
+Permission: Public.
+
+Ghi chú: API cho nhân viên không đăng nhập được gửi yêu cầu reset mật khẩu. Không gửi email, không OTP. Backend đánh dấu account sang `passwordStatus = NEED_TO_RESET`; admin dùng API-AUTH-012 để cấp mật khẩu tạm.
 
 Request:
 
 ```json
 {
-  "temporaryPassword": "Temp@123456"
+  "username": "station01"
 }
 ```
 
@@ -610,18 +805,253 @@ Response:
   "code": 1000,
   "message": "Success",
   "result": {
-    "accountId": "uuid",
-    "passwordStatus": "NEED_TO_CHANGE"
+    "username": "station01",
+    "passwordStatus": "NEED_TO_RESET"
   }
 }
 ```
 
-Ghi chú:
+Validation:
 
-- Không gửi email.
-- Không OTP.
-- `OPERATOR_ADMIN` chuyển mật khẩu tạm qua quy trình ngoài hệ thống.
-- User bắt buộc đổi mật khẩu sau khi đăng nhập.
+| Field | Type | Required | Validation |
+| --- | --- | --- | --- |
+| `username` | string | Yes | Không được rỗng; phải là username account đang tồn tại |
+
+Luồng:
+
+1. Nhân viên nhập username và gửi yêu cầu quên mật khẩu.
+2. Backend tìm account theo `username`.
+3. Nếu account tồn tại và active, set `passwordStatus = NEED_TO_RESET`.
+4. Account có `passwordStatus = NEED_TO_RESET` sẽ bị chặn login cho đến khi admin reset mật khẩu.
+
+Lỗi chính:
+
+| Code | Message | HTTP |
+| --- | --- | --- |
+| `FIELD_REQUIRED` | `username is required` | 400 |
+| `USER_NOT_FOUND` | User not found | 404 |
+| `ACCOUNT_DISABLED` | Your account is currently disabled or inactive. | 403 |
+
+Response theo case để FE ghép:
+
+**1. Gửi yêu cầu reset thành công**
+
+HTTP `200`
+
+```json
+{
+  "code": 1000,
+  "message": "Success",
+  "result": {
+    "username": "station01",
+    "passwordStatus": "NEED_TO_RESET"
+  }
+}
+```
+
+FE action đề xuất: báo user liên hệ admin để nhận mật khẩu tạm.
+
+**2. Thiếu username**
+
+HTTP `400`
+
+```json
+{
+  "code": 2000,
+  "message": "username is required",
+  "result": null
+}
+```
+
+FE action đề xuất: hiển thị lỗi tại field `username`.
+
+**3. Username không tồn tại**
+
+HTTP `404`
+
+```json
+{
+  "code": 3007,
+  "message": "User not found",
+  "result": null
+}
+```
+
+FE action đề xuất: báo username không tồn tại hoặc yêu cầu kiểm tra lại username.
+
+**4. Account bị khóa hoặc inactive**
+
+HTTP `403`
+
+```json
+{
+  "code": 4006,
+  "message": "Your account is currently disabled or inactive.",
+  "result": null
+}
+```
+
+FE action đề xuất: báo user liên hệ quản trị viên.
+
+#### API-AUTH-012 - Admin Reset Password
+
+`POST /account/reset-password`
+
+Permission: `ACCOUNT_WRITE`.
+
+Ghi chú: API cho admin reset mật khẩu account. Admin truyền `username`. Backend tự sinh mật khẩu tạm, lưu password hash, set `passwordStatus = NEED_TO_CHANGE` và trả plaintext một lần trong response.
+
+Request:
+
+```json
+{
+  "username": "station01"
+}
+```
+
+Response:
+
+```json
+{
+  "code": 1000,
+  "message": "Success",
+  "result": {
+    "username": "station01",
+    "passwordStatus": "NEED_TO_CHANGE",
+    "temporaryPassword": "A7xQp2Lm9"
+  }
+}
+```
+
+Validation:
+
+| Field | Type | Required | Validation |
+| --- | --- | --- | --- |
+| `username` | string | Yes | Không được rỗng; phải là username account đang tồn tại |
+
+Quy tắc:
+
+- Chỉ truyền `username`.
+- Account phải đang có `passwordStatus = NEED_TO_RESET`, tức là nhân viên đã gửi yêu cầu qua `POST /auth/forgot-password`.
+- Không truyền `temporaryPassword`; backend tự sinh mật khẩu tạm.
+- Mật khẩu tạm chỉ trả một lần trong response.
+- Admin chuyển mật khẩu tạm cho nhân viên qua quy trình ngoài hệ thống.
+- User bắt buộc đổi mật khẩu sau khi đăng nhập bằng mật khẩu tạm.
+
+Lỗi chính:
+
+| Code | Message | HTTP |
+| --- | --- | --- |
+| `UNAUTHENTICATED` | Unauthenticated access | 401 |
+| `ACCESS_DENIED` | You do not have permission to access this resource | 403 |
+| `INVALID_CSRF_TOKEN` | Missing or invalid CSRF token | 403 |
+| `FIELD_REQUIRED` | `username is required` | 400 |
+| `PASSWORD_RESET_NOT_REQUESTED` | Password reset has not been requested for this account | 400 |
+| `USER_NOT_FOUND` | User not found | 404 |
+
+Response theo case để FE ghép:
+
+**1. Reset thành công**
+
+HTTP `200`
+
+```json
+{
+  "code": 1000,
+  "message": "Success",
+  "result": {
+    "username": "station01",
+    "passwordStatus": "NEED_TO_CHANGE",
+    "temporaryPassword": "A7xQp2Lm9"
+  }
+}
+```
+
+FE action đề xuất: hiển thị/copy `temporaryPassword` cho admin; cảnh báo mật khẩu chỉ hiển thị một lần.
+
+**2. Chưa đăng nhập**
+
+HTTP `401`
+
+```json
+{
+  "code": 4002,
+  "message": "Unauthenticated access",
+  "result": null
+}
+```
+
+FE action đề xuất: điều hướng về login hoặc refresh token theo flow hiện tại.
+
+**3. Đã đăng nhập nhưng thiếu quyền `ACCOUNT_WRITE`**
+
+HTTP `403`
+
+```json
+{
+  "code": 4007,
+  "message": "You do not have permission to access this resource",
+  "result": null
+}
+```
+
+FE action đề xuất: báo không đủ quyền và không retry.
+
+**4. Thiếu/sai CSRF token khi đã authenticated và đủ quyền**
+
+HTTP `403`
+
+```json
+{
+  "code": 4009,
+  "message": "Missing or invalid CSRF token",
+  "result": null
+}
+```
+
+FE action đề xuất: lấy lại CSRF token theo flow hiện tại rồi submit lại.
+
+**5. Không truyền `username`**
+
+HTTP `400`
+
+```json
+{
+  "code": 2000,
+  "message": "username is required",
+  "result": null
+}
+```
+
+FE action đề xuất: bắt admin chọn account trước khi gọi API.
+
+**6. Account không tồn tại**
+
+HTTP `404`
+
+```json
+{
+  "code": 3007,
+  "message": "User not found",
+  "result": null
+}
+```
+
+FE action đề xuất: reload danh sách account hoặc yêu cầu admin kiểm tra lại username.
+
+**7. Account chưa gửi yêu cầu quên mật khẩu**
+
+HTTP `400`
+
+```json
+{
+  "code": 2008,
+  "message": "Password reset has not been requested for this account",
+  "result": null
+}
+```
+
+FE action đề xuất: báo admin rằng account này chưa ở trạng thái cần reset; yêu cầu nhân viên gửi forgot-password trước hoặc kiểm tra lại account.
 
 ## 3. AFC-Ops Master Data APIs
 

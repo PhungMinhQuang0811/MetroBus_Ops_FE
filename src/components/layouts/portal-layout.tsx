@@ -17,19 +17,16 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { identityApi } from "@/lib/api/services/identity"
 import { clearStoredPasswordStatus } from "@/lib/auth/password-status"
+import { clearStoredAuthSession } from "@/lib/auth/session"
+import type { PortalNavItem } from "@/lib/navigation/portal-nav"
 import { ROUTES } from "@/lib/routes"
 import { cn } from "@/lib/utils"
 
-interface NavItem {
-  href: string
-  label: string
-  icon?: React.ComponentType<{ className?: string }>
-}
-
 interface PortalLayoutProps {
   children: React.ReactNode
-  navItems: NavItem[]
+  navItems: PortalNavItem[]
   portalName: string
+  homeHref?: string
   userName?: string
   userRole?: string
   tenantName?: string
@@ -41,8 +38,9 @@ export function PortalLayout({
   children,
   navItems,
   portalName,
+  homeHref = ROUTES.admin.home,
   userName = "user",
-  userRole: _userRole,
+  userRole,
   tenantName: _tenantName,
   shiftStatus: _shiftStatus,
   shiftStation: _shiftStation,
@@ -59,8 +57,17 @@ export function PortalLayout({
       await identityApi.logout()
     } finally {
       clearStoredPasswordStatus()
+      clearStoredAuthSession()
       window.location.assign(ROUTES.login)
     }
+  }
+
+  const isItemActive = (item: PortalNavItem) => {
+    if (item.href === ROUTES.admin.home || item.href === ROUTES.manager.home || item.href === ROUTES.station.home || item.href === ROUTES.operator.home) {
+      return pathname === item.href
+    }
+
+    return pathname === item.href || pathname.startsWith(`${item.href}/`) || item.children?.some(isItemActive)
   }
 
   return (
@@ -68,7 +75,7 @@ export function PortalLayout({
       <header className="sticky top-0 z-40 border-b bg-background">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-6">
-            <Link href={ROUTES.operator.home} className="flex shrink-0 items-center gap-2">
+            <Link href={homeHref} className="flex shrink-0 items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
                 <TrainFront className="h-5 w-5" />
               </div>
@@ -77,9 +84,34 @@ export function PortalLayout({
 
             <nav className="hidden items-center gap-1 md:flex">
               {navItems.map((item) => {
-                const isActive = item.href === ROUTES.operator.home
-                  ? pathname === item.href
-                  : pathname === item.href || pathname.startsWith(`${item.href}/`)
+                const isActive = isItemActive(item)
+
+                if (item.children?.length) {
+                  return (
+                    <DropdownMenu key={item.href}>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className={cn(
+                            "h-9 gap-1 rounded-md px-3 text-sm font-medium",
+                            isActive ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+                          )}
+                        >
+                          {item.label}
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-52">
+                        {item.children.map((child) => (
+                          <DropdownMenuItem key={child.href} asChild>
+                            <Link href={child.href}>{child.label}</Link>
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )
+                }
 
                 return (
                   <Link
@@ -110,6 +142,11 @@ export function PortalLayout({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
               <DropdownMenuLabel>{userName}</DropdownMenuLabel>
+              {userRole && (
+                <DropdownMenuLabel className="pt-0 text-xs font-normal text-muted-foreground">
+                  {userRole}
+                </DropdownMenuLabel>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link href={ROUTES.changePassword}>

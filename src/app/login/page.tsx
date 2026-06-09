@@ -1,6 +1,7 @@
 "use client"
 
 import { FormEvent, useState } from "react"
+import Link from "next/link"
 import { Bus, Eye, EyeOff, LogIn } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -9,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { identityApi } from "@/lib/api/services/identity"
 import { clearStoredPasswordStatus, requiresPasswordChange, storePasswordStatus } from "@/lib/auth/password-status"
+import { clearStoredAuthSession, getHomeRouteForRoles, storeAuthSession } from "@/lib/auth/session"
 import { getApiErrorMessage } from "@/lib/messages/api-errors"
 import { ROUTES } from "@/lib/routes"
 
@@ -34,6 +36,7 @@ export default function LoginPage() {
       const response = await identityApi.login({ username: username.trim(), password })
       const { passwordStatus } = response.result
 
+      storeAuthSession(response.result)
       storePasswordStatus(passwordStatus)
 
       if (requiresPasswordChange(passwordStatus)) {
@@ -43,11 +46,12 @@ export default function LoginPage() {
 
       if (passwordStatus === "NEED_TO_RESET") {
         clearStoredPasswordStatus()
+        clearStoredAuthSession()
         setError("Tài khoản của bạn cần quản trị viên đặt lại mật khẩu.")
         return
       }
 
-      window.location.assign(ROUTES.operator.home)
+      window.location.assign(getHomeRouteForRoles(response.result.roles))
     } catch (error) {
       setError(getApiErrorMessage(error))
     } finally {
@@ -124,6 +128,12 @@ export default function LoginPage() {
                 <LogIn className="mr-2 h-4 w-4" />
                 {loading ? "Đang đăng nhập..." : "Đăng nhập"}
               </Button>
+
+              <div className="text-center">
+                <Link href={ROUTES.forgotPassword} className="text-sm text-primary hover:underline">
+                  Quên mật khẩu?
+                </Link>
+              </div>
             </form>
           </CardContent>
         </Card>

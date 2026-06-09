@@ -1,15 +1,15 @@
 "use client"
 
-import { ReactNode, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 
 import { AuthSessionProvider } from "@/components/auth/auth-session-provider"
 import { PortalLayout } from "@/components/layouts/portal-layout"
 import { AUTH_ROLE_LABELS, AUTH_ROLES } from "@/lib/auth/constants"
 import { getHomeRouteForRoles, getPrimaryAuthRole, getStoredAuthSession, type StoredAuthSession } from "@/lib/auth/session"
-import { stationNavItems } from "@/lib/navigation/portal-nav"
+import { managerNavItems } from "@/lib/navigation/portal-nav"
 import { ROUTES } from "@/lib/routes"
 
-export default function StationLayout({ children }: { children: ReactNode }) {
+export default function ManagerLayout({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<StoredAuthSession | null>(null)
   const [checkedSession, setCheckedSession] = useState(false)
 
@@ -22,7 +22,7 @@ export default function StationLayout({ children }: { children: ReactNode }) {
       return
     }
 
-    if (role !== AUTH_ROLES.STATION_OPERATOR) {
+    if (role !== AUTH_ROLES.OPERATOR_MANAGER) {
       window.location.assign(getHomeRouteForRoles(storedSession.roles))
       return
     }
@@ -36,11 +36,11 @@ export default function StationLayout({ children }: { children: ReactNode }) {
   return (
     <AuthSessionProvider>
       <PortalLayout
-        navItems={stationNavItems}
         portalName="AFC Ops"
-        homeHref={ROUTES.station.home}
+        homeHref={ROUTES.manager.home}
+        navItems={managerNavItems}
         userName={session.username}
-        userRole={AUTH_ROLE_LABELS[AUTH_ROLES.STATION_OPERATOR]}
+        userRole={AUTH_ROLE_LABELS[AUTH_ROLES.OPERATOR_MANAGER]}
       >
         {children}
       </PortalLayout>

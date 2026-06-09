@@ -8,6 +8,8 @@ export type {
   Account,
   AccountListResponse,
   AccountMutationResponse,
+  ChangePasswordRequest,
+  ChangePasswordResponse,
   ConfirmImportAccountItem,
   ConfirmImportAccountsResponse,
   ImportAccountError,

@@ -3,8 +3,6 @@ export interface LoginRequest {
   password: string
 }
 
-export interface ChangePasswordRequest {
-  currentPassword: string
-  newPassword: string
-  confirmPassword: string
+export interface ForgotPasswordRequest {
+  username: string
 }

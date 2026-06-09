@@ -485,7 +485,7 @@ export default function AccountManagementPage() {
             <SelectValue placeholder="Trạng thái" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tất cả</SelectItem>
+            <SelectItem value="all">Tất cả trạng thái</SelectItem>
             <SelectItem value="active">Active</SelectItem>
             <SelectItem value="banned">Banned</SelectItem>
           </SelectContent>

@@ -1,20 +1,21 @@
 "use client"
 
 import { FormEvent, useEffect, useState } from "react"
-import { AlertCircle, Bus, Eye, EyeOff, KeyRound, LogOut } from "lucide-react"
+import { AlertCircle, ArrowLeft, Bus, Eye, EyeOff, KeyRound, LogOut } from "lucide-react"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { identityApi } from "@/lib/api"
+import { accountApi, identityApi } from "@/lib/api"
 import {
   clearStoredPasswordStatus,
   getStoredPasswordStatus,
   requiresPasswordChange,
   storePasswordStatus,
 } from "@/lib/auth/password-status"
+import { clearStoredAuthSession, getHomeRouteForRoles, getStoredAuthSession } from "@/lib/auth/session"
 import { getApiErrorMessage } from "@/lib/messages"
 import { ROUTES } from "@/lib/routes"
 
@@ -89,6 +90,10 @@ export default function ChangePasswordPage() {
 
   const resetError = () => setError("")
 
+  const handleBackToWorkspace = () => {
+    window.location.assign(getHomeRouteForRoles(getStoredAuthSession()?.roles))
+  }
+
   const handleLogout = async () => {
     if (loading) return
 
@@ -98,6 +103,7 @@ export default function ChangePasswordPage() {
       await identityApi.logout()
     } finally {
       clearStoredPasswordStatus()
+      clearStoredAuthSession()
       window.location.assign(ROUTES.login)
     }
   }
@@ -124,14 +130,14 @@ export default function ChangePasswordPage() {
     setError("")
 
     try {
-      const response = await identityApi.changePassword({
+      const response = await accountApi.changePassword({
         currentPassword,
         newPassword,
         confirmPassword,
       })
 
       storePasswordStatus(response.result.passwordStatus)
-      window.location.assign(ROUTES.operator.home)
+      window.location.assign(getHomeRouteForRoles(getStoredAuthSession()?.roles))
     } catch (error) {
       setError(getApiErrorMessage(error))
     } finally {
@@ -229,10 +235,17 @@ export default function ChangePasswordPage() {
               </div>
 
               <div className="flex gap-3 pt-2">
-                <Button type="button" variant="outline" className="flex-1" disabled={loading} onClick={handleLogout}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Đăng xuất
-                </Button>
+                {forcedChange ? (
+                  <Button type="button" variant="outline" className="flex-1" disabled={loading} onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Đăng xuất
+                  </Button>
+                ) : (
+                  <Button type="button" variant="outline" className="flex-1" disabled={loading} onClick={handleBackToWorkspace}>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Quay lại
+                  </Button>
+                )}
                 <Button type="submit" className="flex-1" disabled={loading}>
                   {loading ? "Đang cập nhật..." : "Cập nhật"}
                 </Button>

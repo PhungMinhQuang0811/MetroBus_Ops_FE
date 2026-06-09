@@ -27,9 +27,14 @@ export interface AccountMutationResponse {
   temporaryPassword?: string
 }
 
-export interface ResetAccountPasswordResponse {
-  accountId: string
+export interface ChangePasswordResponse {
   passwordStatus: PasswordStatus
+}
+
+export interface ResetAccountPasswordResponse {
+  username: string
+  passwordStatus: PasswordStatus
+  temporaryPassword: string
 }
 
 export interface ImportAccountError {

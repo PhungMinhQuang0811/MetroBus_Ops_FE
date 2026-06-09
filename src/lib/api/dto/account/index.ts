@@ -1,4 +1,5 @@
 export type {
+  ChangePasswordRequest,
   CreateAccountRequest,
   ListAccountsQuery,
   ResetAccountPasswordRequest,
@@ -7,6 +8,7 @@ export type {
   Account,
   AccountListResponse,
   AccountMutationResponse,
+  ChangePasswordResponse,
   ConfirmImportAccountItem,
   ConfirmImportAccountsResponse,
   ImportAccountError,

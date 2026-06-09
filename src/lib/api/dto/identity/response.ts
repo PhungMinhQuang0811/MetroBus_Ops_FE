@@ -7,3 +7,8 @@ export interface AuthResponse {
   permissions: string[]
   passwordStatus: PasswordStatus
 }
+
+export interface ForgotPasswordResponse {
+  username: string
+  passwordStatus: PasswordStatus
+}

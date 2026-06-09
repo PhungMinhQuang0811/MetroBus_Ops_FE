@@ -5,13 +5,20 @@ import Link from "next/link"
 import { ArrowRight, Bus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { getHomeRouteForRoles, getStoredAuthSession } from "@/lib/auth/session"
 import { ROUTES } from "@/lib/routes"
 
 export function LandingHeader() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
+  const [systemHref, setSystemHref] = useState<string>(ROUTES.operator.home)
 
   useEffect(() => {
     const controller = new AbortController()
+    const storedSession = getStoredAuthSession()
+
+    if (storedSession) {
+      setSystemHref(getHomeRouteForRoles(storedSession.roles))
+    }
 
     fetch("/bff/auth/status", {
       credentials: "include",
@@ -46,7 +53,7 @@ export function LandingHeader() {
         <div className="flex min-h-8 min-w-40 items-center justify-end gap-3">
           {isAuthenticated === true && (
             <Button asChild size="sm">
-              <Link href={ROUTES.operator.home}>
+              <Link href={systemHref}>
                 Vào hệ thống
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
