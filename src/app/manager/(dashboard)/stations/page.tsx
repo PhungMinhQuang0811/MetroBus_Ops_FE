@@ -39,25 +39,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { ApiError, routeApi } from "@/lib/api"
+import { ApiError, routeApi, stationApi } from "@/lib/api"
 import type {
   MasterDataStatus,
-  PreviewImportRoutesResponse,
-  RouteImportError,
-  RouteImportPreviewItem,
-  RouteMutationRequest,
+  PreviewImportStationsResponse,
+  Station,
+  StationImportError,
+  StationImportPreviewItem,
+  StationMutationRequest,
   TransitRoute,
-  TransportType,
 } from "@/lib/api"
 import { getApiErrorMessage, getApiErrorMessageFromBackendMessage } from "@/lib/messages"
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const
 const TABLE_CLASS_NAME = "border-collapse [&_td]:border [&_th]:border [&_thead_tr]:bg-muted/40"
-
-const TRANSPORT_TYPE_LABELS: Record<TransportType, string> = {
-  METRO: "Metro",
-  BUS: "Bus",
-}
 
 const STATUS_LABELS: Record<MasterDataStatus, string> = {
   ACTIVE: "Đang hoạt động",
@@ -87,22 +82,28 @@ function StatusBadge({ status }: { status: MasterDataStatus }) {
   )
 }
 
-function normalizeRouteForm(routeName: string, transportType: string): RouteMutationRequest {
+function normalizeStationForm(routeId: string, stationName: string, stationOrder: string): StationMutationRequest {
   return {
-    routeName: routeName.trim(),
-    transportType: transportType as TransportType,
+    routeId: Number(routeId),
+    stationName: stationName.trim(),
+    stationOrder: Number(stationOrder),
   }
 }
 
-function isImportErrorResponse(error: unknown): error is ApiError<PreviewImportRoutesResponse> {
-  return error instanceof ApiError && Boolean((error.response.result as PreviewImportRoutesResponse | null)?.errors?.length)
+function isImportErrorResponse(error: unknown): error is ApiError<PreviewImportStationsResponse> {
+  return error instanceof ApiError && Boolean((error.response.result as PreviewImportStationsResponse | null)?.errors?.length)
 }
 
-export default function RoutesPage() {
+function getRouteLabel(route: TransitRoute) {
+  return `${route.routeCode} - ${route.routeName}`
+}
+
+export default function StationsPage() {
   const router = useRouter()
-  const [routes, setRoutes] = useState<TransitRoute[]>([])
+  const [stations, setStations] = useState<Station[]>([])
+  const [routeOptions, setRouteOptions] = useState<TransitRoute[]>([])
   const [keyword, setKeyword] = useState("")
-  const [transportType, setTransportType] = useState("all")
+  const [routeId, setRouteId] = useState("all")
   const [status, setStatus] = useState("all")
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(10)
@@ -113,21 +114,21 @@ export default function RoutesPage() {
   const [successMessage, setSuccessMessage] = useState("")
 
   const [formOpen, setFormOpen] = useState(false)
-  const [editingRoute, setEditingRoute] = useState<TransitRoute | null>(null)
-  const [routeName, setRouteName] = useState("")
-  const [formTransportType, setFormTransportType] = useState<TransportType>("METRO")
+  const [editingStation, setEditingStation] = useState<Station | null>(null)
+  const [formRouteId, setFormRouteId] = useState("")
+  const [stationName, setStationName] = useState("")
+  const [stationOrder, setStationOrder] = useState("")
   const [formLoading, setFormLoading] = useState(false)
   const [formError, setFormError] = useState("")
 
-  const [statusRoute, setStatusRoute] = useState<TransitRoute | null>(null)
+  const [statusStation, setStatusStation] = useState<Station | null>(null)
   const [statusLoading, setStatusLoading] = useState(false)
 
   const [importOpen, setImportOpen] = useState(false)
   const [importFile, setImportFile] = useState<File | null>(null)
-  const [importPreviewItems, setImportPreviewItems] = useState<RouteImportPreviewItem[]>([])
+  const [importPreviewItems, setImportPreviewItems] = useState<StationImportPreviewItem[]>([])
   const [importPreviewSummary, setImportPreviewSummary] = useState<{ totalRows: number; validRows: number; invalidRows: number } | null>(null)
-  const [importErrors, setImportErrors] = useState<RouteImportError[]>([])
-  const [importedRoutes, setImportedRoutes] = useState<TransitRoute[]>([])
+  const [importErrors, setImportErrors] = useState<StationImportError[]>([])
   const [importError, setImportError] = useState("")
   const [importLoading, setImportLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -135,28 +136,37 @@ export default function RoutesPage() {
   const fromRow = totalElements === 0 ? 0 : page * pageSize + 1
   const toRow = Math.min((page + 1) * pageSize, totalElements)
 
-  const loadRoutes = async (
+  const loadRouteOptions = async () => {
+    try {
+      const response = await routeApi.listRoutes({ page: 0, size: 100 })
+      setRouteOptions(response.result.items)
+    } catch (error) {
+      setTableError(getApiErrorMessage(error))
+    }
+  }
+
+  const loadStations = async (
     targetPage = page,
-    filters?: { keyword: string; transportType: string; status: string },
+    filters?: { keyword: string; routeId: string; status: string },
     targetPageSize = pageSize,
   ) => {
     setLoading(true)
     setTableError("")
 
     const currentKeyword = filters?.keyword ?? keyword
-    const currentTransportType = filters?.transportType ?? transportType
+    const currentRouteId = filters?.routeId ?? routeId
     const currentStatus = filters?.status ?? status
 
     try {
-      const response = await routeApi.listRoutes({
+      const response = await stationApi.listStations({
         keyword: currentKeyword.trim() || undefined,
-        transportType: currentTransportType === "all" ? undefined : currentTransportType as TransportType,
+        routeId: currentRouteId === "all" ? undefined : Number(currentRouteId),
         status: currentStatus === "all" ? undefined : currentStatus as MasterDataStatus,
         page: targetPage,
         size: targetPageSize,
       })
 
-      setRoutes(response.result.items)
+      setStations(response.result.items)
       setPage(response.result.page)
       setPageSize(response.result.size)
       setTotalElements(response.result.totalElements)
@@ -169,35 +179,49 @@ export default function RoutesPage() {
   }
 
   useEffect(() => {
-    void loadRoutes(0)
+    void loadRouteOptions()
+    void loadStations(0)
   }, [])
 
-  const resetRouteForm = () => {
-    setEditingRoute(null)
-    setRouteName("")
-    setFormTransportType("METRO")
+  const resetStationForm = () => {
+    setEditingStation(null)
+    setFormRouteId("")
+    setStationName("")
+    setStationOrder("")
     setFormError("")
   }
 
-  const openCreateRoute = () => {
-    resetRouteForm()
+  const openCreateStation = () => {
+    resetStationForm()
+    setFormRouteId(routeId === "all" ? String(routeOptions[0]?.id ?? "") : routeId)
     setFormOpen(true)
   }
 
-  const openEditRoute = (route: TransitRoute) => {
-    setEditingRoute(route)
-    setRouteName(route.routeName)
-    setFormTransportType(route.transportType)
+  const openEditStation = (station: Station) => {
+    setEditingStation(station)
+    setFormRouteId(String(station.routeId))
+    setStationName(station.stationName)
+    setStationOrder(String(station.stationOrder))
     setFormError("")
     setFormOpen(true)
   }
 
-  const handleSubmitRoute = async (event: FormEvent) => {
+  const handleSubmitStation = async (event: FormEvent) => {
     event.preventDefault()
 
-    const payload = normalizeRouteForm(routeName, formTransportType)
-    if (!payload.routeName || !payload.transportType) {
-      setFormError("Vui lòng nhập đầy đủ thông tin tuyến.")
+    const payload = normalizeStationForm(formRouteId, stationName, stationOrder)
+    if (!Number.isInteger(payload.routeId) || payload.routeId < 1) {
+      setFormError("Vui lòng chọn tuyến.")
+      return
+    }
+
+    if (!payload.stationName) {
+      setFormError("Vui lòng nhập tên ga/trạm.")
+      return
+    }
+
+    if (!Number.isInteger(payload.stationOrder) || payload.stationOrder < 1) {
+      setFormError("Thứ tự ga/trạm phải là số nguyên lớn hơn hoặc bằng 1.")
       return
     }
 
@@ -205,17 +229,17 @@ export default function RoutesPage() {
     setFormError("")
 
     try {
-      if (editingRoute) {
-        await routeApi.updateRoute(editingRoute.id, payload)
-        setSuccessMessage("Tuyến đã được cập nhật.")
+      if (editingStation) {
+        await stationApi.updateStation(editingStation.id, payload)
+        setSuccessMessage("Ga/trạm đã được cập nhật.")
       } else {
-        await routeApi.createRoute(payload)
-        setSuccessMessage("Tuyến đã được tạo.")
+        await stationApi.createStation(payload)
+        setSuccessMessage("Ga/trạm đã được tạo.")
       }
 
       setFormOpen(false)
-      resetRouteForm()
-      await loadRoutes(editingRoute ? page : 0)
+      resetStationForm()
+      await loadStations(editingStation ? page : 0)
     } catch (error) {
       setFormError(getApiErrorMessage(error))
     } finally {
@@ -225,42 +249,42 @@ export default function RoutesPage() {
 
   const handleApplyFilters = () => {
     setSuccessMessage("")
-    void loadRoutes(0)
+    void loadStations(0)
   }
 
   const handleResetFilters = () => {
-    const resetFilters = { keyword: "", transportType: "all", status: "all" }
+    const resetFilters = { keyword: "", routeId: "all", status: "all" }
     setKeyword("")
-    setTransportType("all")
+    setRouteId("all")
     setStatus("all")
     setSuccessMessage("")
-    void loadRoutes(0, resetFilters)
+    void loadStations(0, resetFilters)
   }
 
   const handlePageSizeChange = (value: string) => {
     const nextPageSize = Number(value)
     setPageSize(nextPageSize)
     setSuccessMessage("")
-    void loadRoutes(0, undefined, nextPageSize)
+    void loadStations(0, undefined, nextPageSize)
   }
 
   const handleToggleStatus = async () => {
-    if (!statusRoute) return
+    if (!statusStation) return
 
     setStatusLoading(true)
     setTableError("")
 
     try {
-      if (statusRoute.status === "ACTIVE") {
-        await routeApi.disableRoute(statusRoute.id)
-        setSuccessMessage("Tuyến đã được vô hiệu hóa.")
+      if (statusStation.status === "ACTIVE") {
+        await stationApi.disableStation(statusStation.id)
+        setSuccessMessage("Ga/trạm đã được vô hiệu hóa.")
       } else {
-        await routeApi.enableRoute(statusRoute.id)
-        setSuccessMessage("Tuyến đã được kích hoạt.")
+        await stationApi.enableStation(statusStation.id)
+        setSuccessMessage("Ga/trạm đã được kích hoạt.")
       }
 
-      setStatusRoute(null)
-      await loadRoutes(page)
+      setStatusStation(null)
+      await loadStations(page)
     } catch (error) {
       setTableError(getApiErrorMessage(error))
     } finally {
@@ -273,7 +297,6 @@ export default function RoutesPage() {
     setImportPreviewItems([])
     setImportPreviewSummary(null)
     setImportErrors([])
-    setImportedRoutes([])
     setImportError("")
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
@@ -284,7 +307,6 @@ export default function RoutesPage() {
     setImportPreviewItems([])
     setImportPreviewSummary(null)
     setImportErrors([])
-    setImportedRoutes([])
     setImportError("")
   }
 
@@ -294,23 +316,14 @@ export default function RoutesPage() {
 
   const handleDownloadTemplate = () => {
     const link = document.createElement("a")
-    link.href = "/templates/route-import-template.xlsx"
-    link.download = "route-import-template.xlsx"
+    link.href = "/templates/station-import-template.xlsx"
+    link.download = "station-import-template.xlsx"
     link.click()
   }
 
   const handleChooseAnotherImportFile = () => {
-    setImportFile(null)
-    setImportPreviewItems([])
-    setImportPreviewSummary(null)
-    setImportErrors([])
-    setImportedRoutes([])
-    setImportError("")
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ""
-      fileInputRef.current.click()
-    }
+    resetImportState()
+    fileInputRef.current?.click()
   }
 
   const handlePreviewImport = async () => {
@@ -323,10 +336,9 @@ export default function RoutesPage() {
     setImportError("")
     setImportErrors([])
     setImportPreviewSummary(null)
-    setImportedRoutes([])
 
     try {
-      const response = await routeApi.previewImportRoutes(importFile)
+      const response = await stationApi.previewImportStations(importFile)
       setImportPreviewSummary({
         totalRows: response.result.totalRows,
         validRows: response.result.validRows,
@@ -352,15 +364,15 @@ export default function RoutesPage() {
     setImportErrors([])
 
     try {
-      const response = await routeApi.confirmImportRoutes(importFile)
-      setSuccessMessage(`Import tuyến hoàn tất. Đã tạo ${response.result.imported} tuyến.`)
-      await loadRoutes(0)
+      const response = await stationApi.confirmImportStations(importFile)
+      setSuccessMessage(`Import ga/trạm hoàn tất. Đã tạo ${response.result.imported} ga/trạm.`)
+      await loadStations(0)
       setImportOpen(false)
       resetImportState()
     } catch (error) {
       if (isImportErrorResponse(error)) {
         setImportErrors(error.response.result.errors)
-        setImportError("File có lỗi nên chưa có tuyến nào được tạo.")
+        setImportError("File có lỗi nên chưa có ga/trạm nào được tạo.")
       } else {
         setImportError(getApiErrorMessage(error))
       }
@@ -370,23 +382,24 @@ export default function RoutesPage() {
   }
 
   const hasInvalidImportRows = importErrors.length > 0
-  const canConfirmImport = Boolean(importFile && importPreviewItems.length > 0 && !hasInvalidImportRows && importedRoutes.length === 0)
+  const hasPreview = importPreviewItems.length > 0
+  const canConfirmImport = Boolean(importFile && hasPreview && !hasInvalidImportRows)
 
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Tuyến</h1>
-          <p className="text-sm text-muted-foreground">Quản lý tuyến metro/bus trong operator hiện tại.</p>
+          <h1 className="text-2xl font-semibold text-foreground">Ga/Trạm</h1>
+          <p className="text-sm text-muted-foreground">Quản lý ga/trạm theo tuyến trong operator hiện tại.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => setImportOpen(true)}>
             <FileUp className="h-4 w-4" />
             Import
           </Button>
-          <Button onClick={openCreateRoute}>
+          <Button onClick={openCreateStation}>
             <Plus className="h-4 w-4" />
-            Tạo tuyến
+            Tạo ga/trạm
           </Button>
         </div>
       </div>
@@ -398,19 +411,20 @@ export default function RoutesPage() {
         </Alert>
       )}
 
-      <div className="grid gap-3 rounded-md border bg-card p-3 md:grid-cols-[minmax(220px,1fr)_180px_180px_auto_auto]">
+      <div className="grid gap-3 rounded-md border bg-card p-3 md:grid-cols-[minmax(220px,1fr)_220px_180px_auto_auto]">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="Tìm mã hoặc tên tuyến" className="pl-9" />
+          <Input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="Tìm mã hoặc tên ga/trạm" className="pl-9" />
         </div>
-        <Select value={transportType} onValueChange={setTransportType}>
+        <Select value={routeId} onValueChange={setRouteId}>
           <SelectTrigger>
-            <SelectValue placeholder="Loại hình" />
+            <SelectValue placeholder="Tuyến" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tất cả loại hình</SelectItem>
-            <SelectItem value="METRO">Metro</SelectItem>
-            <SelectItem value="BUS">Bus</SelectItem>
+            <SelectItem value="all">Tất cả tuyến</SelectItem>
+            {routeOptions.map((route) => (
+              <SelectItem key={route.id} value={String(route.id)}>{route.routeCode}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Select value={status} onValueChange={setStatus}>
@@ -437,9 +451,10 @@ export default function RoutesPage() {
         <Table className={TABLE_CLASS_NAME}>
           <TableHeader>
             <TableRow>
+              <TableHead>Mã ga/trạm</TableHead>
+              <TableHead>Tên ga/trạm</TableHead>
               <TableHead>Mã tuyến</TableHead>
-              <TableHead>Tên tuyến</TableHead>
-              <TableHead>Loại hình</TableHead>
+              <TableHead>Thứ tự</TableHead>
               <TableHead>Trạng thái</TableHead>
               <TableHead>Cập nhật</TableHead>
               <TableHead className="text-right">Thao tác</TableHead>
@@ -448,43 +463,44 @@ export default function RoutesPage() {
           <TableBody>
             {loading && (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">Đang tải tuyến...</TableCell>
+                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">Đang tải ga/trạm...</TableCell>
               </TableRow>
             )}
-            {!loading && routes.length === 0 && (
+            {!loading && stations.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">Không có tuyến phù hợp.</TableCell>
+                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">Không có ga/trạm phù hợp.</TableCell>
               </TableRow>
             )}
-            {!loading && routes.map((route) => (
-              <TableRow key={route.id}>
-                <TableCell className="font-medium">{route.routeCode}</TableCell>
-                <TableCell>{route.routeName}</TableCell>
-                <TableCell>{TRANSPORT_TYPE_LABELS[route.transportType]}</TableCell>
-                <TableCell><StatusBadge status={route.status} /></TableCell>
-                <TableCell>{formatDateTime(route.updatedAt ?? route.createdAt)}</TableCell>
+            {!loading && stations.map((station) => (
+              <TableRow key={station.id}>
+                <TableCell className="font-medium">{station.stationCode}</TableCell>
+                <TableCell>{station.stationName}</TableCell>
+                <TableCell>{station.routeCode}</TableCell>
+                <TableCell>{station.stationOrder}</TableCell>
+                <TableCell><StatusBadge status={station.status} /></TableCell>
+                <TableCell>{formatDateTime(station.updatedAt ?? station.createdAt)}</TableCell>
                 <TableCell>
                   <div className="flex justify-end">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" aria-label={`Thao tác với tuyến ${route.routeCode}`}>
+                        <Button variant="ghost" size="icon" aria-label={`Thao tác với ga/trạm ${station.stationCode}`}>
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => router.push(`/manager/routes/${route.id}`)}>
+                        <DropdownMenuItem onClick={() => router.push(`/manager/stations/${station.id}`)}>
                           <Eye className="h-4 w-4" />
                           Xem
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => openEditRoute(route)}>
+                        <DropdownMenuItem onClick={() => openEditStation(station)}>
                           <Pencil className="h-4 w-4" />
                           Sửa
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          className={route.status === "ACTIVE" ? "text-destructive focus:text-destructive" : ""}
-                          onClick={() => setStatusRoute(route)}
+                          className={station.status === "ACTIVE" ? "text-destructive focus:text-destructive" : ""}
+                          onClick={() => setStatusStation(station)}
                         >
-                          {route.status === "ACTIVE" ? "Disable" : "Enable"}
+                          {station.status === "ACTIVE" ? "Disable" : "Enable"}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -510,39 +526,44 @@ export default function RoutesPage() {
           </div>
           <div>{fromRow}-{toRow} of {totalElements}</div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" disabled={loading || page <= 0} onClick={() => void loadRoutes(page - 1)}>Trước</Button>
+            <Button variant="outline" size="sm" disabled={loading || page <= 0} onClick={() => void loadStations(page - 1)}>Trước</Button>
             <span className="min-w-20 text-center">Trang {totalPages === 0 ? 0 : page + 1}/{totalPages}</span>
-            <Button variant="outline" size="sm" disabled={loading || page + 1 >= totalPages} onClick={() => void loadRoutes(page + 1)}>Sau</Button>
+            <Button variant="outline" size="sm" disabled={loading || page + 1 >= totalPages} onClick={() => void loadStations(page + 1)}>Sau</Button>
           </div>
         </div>
       </div>
 
       <Dialog open={formOpen} onOpenChange={(open) => {
         setFormOpen(open)
-        if (!open) resetRouteForm()
+        if (!open) resetStationForm()
       }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingRoute ? "Cập nhật tuyến" : "Tạo tuyến"}</DialogTitle>
-            <DialogDescription>Backend tự sinh mã tuyến và scope operator từ tài khoản đăng nhập.</DialogDescription>
+            <DialogTitle>{editingStation ? "Cập nhật ga/trạm" : "Tạo ga/trạm"}</DialogTitle>
+            <DialogDescription>Backend tự sinh mã ga/trạm theo tuyến. Trạng thái được quản lý bằng thao tác riêng.</DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmitRoute} className="space-y-4">
+          <form onSubmit={handleSubmitStation} className="space-y-4">
             {formError && <Alert variant="destructive"><AlertDescription>{formError}</AlertDescription></Alert>}
             <div className="space-y-2">
-              <Label htmlFor="routeName">Tên tuyến</Label>
-              <Input id="routeName" value={routeName} onChange={(event) => setRouteName(event.target.value)} placeholder="Metro Line 1" />
-            </div>
-            <div className="space-y-2">
-              <Label>Loại hình vận tải</Label>
-              <Select value={formTransportType} onValueChange={(value) => setFormTransportType(value as TransportType)}>
+              <Label>Tuyến</Label>
+              <Select value={formRouteId} onValueChange={setFormRouteId}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Chọn tuyến" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="METRO">Metro</SelectItem>
-                  <SelectItem value="BUS">Bus</SelectItem>
+                  {routeOptions.map((route) => (
+                    <SelectItem key={route.id} value={String(route.id)}>{getRouteLabel(route)}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="stationName">Tên ga/trạm</Label>
+              <Input id="stationName" value={stationName} onChange={(event) => setStationName(event.target.value)} placeholder="Bến Thành" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="stationOrder">Thứ tự trong tuyến</Label>
+              <Input id="stationOrder" type="number" min={1} step={1} value={stationOrder} onChange={(event) => setStationOrder(event.target.value)} placeholder="1" />
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" disabled={formLoading} onClick={() => setFormOpen(false)}>Hủy</Button>
@@ -558,8 +579,8 @@ export default function RoutesPage() {
       }}>
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Import tuyến</DialogTitle>
-            <DialogDescription>Validate toàn bộ file trước khi tạo tuyến. Confirm sẽ gửi lại file gốc cho backend xử lý.</DialogDescription>
+            <DialogTitle>Import ga/trạm</DialogTitle>
+            <DialogDescription>Validate toàn bộ file trước khi tạo ga/trạm. Confirm sẽ gửi lại file gốc cho backend xử lý.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {importError && <Alert variant="destructive"><AlertDescription>{importError}</AlertDescription></Alert>}
@@ -570,14 +591,9 @@ export default function RoutesPage() {
                 </AlertDescription>
               </Alert>
             )}
-            {importedRoutes.length > 0 && (
-              <Alert>
-                <AlertDescription>Đã import thành công {importedRoutes.length} tuyến.</AlertDescription>
-              </Alert>
-            )}
             <input ref={fileInputRef} type="file" accept=".xlsx" className="hidden" onChange={handleImportFileChange} />
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              {importPreviewItems.length === 0 && importedRoutes.length === 0 && (
+              {!hasPreview && (
                 <Button type="button" variant="outline" onClick={handleOpenImportFilePicker}>
                   <Upload className="h-4 w-4" />
                   Chọn file
@@ -590,7 +606,7 @@ export default function RoutesPage() {
               <span className="text-sm text-muted-foreground">{importFile?.name ?? "Chưa chọn file import."}</span>
             </div>
 
-            {importPreviewItems.length === 0 && importedRoutes.length === 0 && (
+            {!hasPreview && (
               <div className="rounded-md border">
                 <div className="border-b px-3 py-2 text-sm font-medium">Preview</div>
                 <div className="p-3 text-sm text-muted-foreground">
@@ -599,23 +615,25 @@ export default function RoutesPage() {
               </div>
             )}
 
-            {importPreviewItems.length > 0 && importedRoutes.length === 0 && (
+            {hasPreview && (
               <div className="rounded-md border">
                 <Table className={TABLE_CLASS_NAME}>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Row</TableHead>
-                      <TableHead>Tên tuyến</TableHead>
-                      <TableHead>Loại hình</TableHead>
+                      <TableHead>Mã tuyến</TableHead>
+                      <TableHead>Tên ga/trạm</TableHead>
+                      <TableHead>Thứ tự</TableHead>
                       <TableHead>Kết quả</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {importPreviewItems.map((item) => (
-                      <TableRow key={`${item.row}-${item.routeName ?? "empty"}`}>
+                      <TableRow key={`${item.row}-${item.routeCode ?? "empty"}`}>
                         <TableCell>{item.row}</TableCell>
-                        <TableCell>{item.routeName ?? "--"}</TableCell>
-                        <TableCell>{item.transportType ?? "--"}</TableCell>
+                        <TableCell>{item.routeCode ?? "--"}</TableCell>
+                        <TableCell>{item.stationName ?? "--"}</TableCell>
+                        <TableCell>{item.stationOrder ?? "--"}</TableCell>
                         <TableCell>{item.valid ? "Hợp lệ" : item.errors.map((error) => getApiErrorMessageFromBackendMessage(error.message)).join(", ")}</TableCell>
                       </TableRow>
                     ))}
@@ -624,32 +642,7 @@ export default function RoutesPage() {
               </div>
             )}
 
-            {importedRoutes.length > 0 && (
-              <div className="rounded-md border">
-                <Table className={TABLE_CLASS_NAME}>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Mã tuyến</TableHead>
-                      <TableHead>Tên tuyến</TableHead>
-                      <TableHead>Loại hình</TableHead>
-                      <TableHead>Trạng thái</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {importedRoutes.map((route) => (
-                      <TableRow key={route.id}>
-                        <TableCell>{route.routeCode}</TableCell>
-                        <TableCell>{route.routeName}</TableCell>
-                        <TableCell>{TRANSPORT_TYPE_LABELS[route.transportType]}</TableCell>
-                        <TableCell>{STATUS_LABELS[route.status]}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-
-            {importErrors.length > 0 && importedRoutes.length === 0 && (
+            {importErrors.length > 0 && (
               <div className="space-y-3">
                 <Alert variant="destructive"><AlertDescription>File có dòng dữ liệu không hợp lệ.</AlertDescription></Alert>
                 <Table className={TABLE_CLASS_NAME}>
@@ -670,18 +663,16 @@ export default function RoutesPage() {
             )}
 
             <DialogFooter>
-              {importPreviewItems.length > 0 && importedRoutes.length === 0 && (
+              {hasPreview && (
                 <Button type="button" variant="outline" disabled={importLoading} onClick={handleChooseAnotherImportFile}>Chọn file khác</Button>
               )}
-              <Button type="button" variant="outline" disabled={importLoading} onClick={() => setImportOpen(false)}>
-                {importedRoutes.length > 0 ? "Đóng" : "Hủy"}
-              </Button>
-              {importPreviewItems.length === 0 && importedRoutes.length === 0 && (
+              <Button type="button" variant="outline" disabled={importLoading} onClick={() => setImportOpen(false)}>Hủy</Button>
+              {!hasPreview && (
                 <Button type="button" disabled={importLoading} onClick={() => void handlePreviewImport()}>
                   {importLoading ? "Đang preview..." : "Preview"}
                 </Button>
               )}
-              {importPreviewItems.length > 0 && importedRoutes.length === 0 && (
+              {hasPreview && (
                 hasInvalidImportRows
                   ? <Button type="button" disabled={importLoading || !importFile} onClick={() => void handlePreviewImport()}>{importLoading ? "Đang preview..." : "Preview lại"}</Button>
                   : <Button type="button" disabled={!canConfirmImport || importLoading} onClick={() => void handleConfirmImport()}>{importLoading ? "Đang import..." : "Xác nhận import"}</Button>
@@ -692,12 +683,12 @@ export default function RoutesPage() {
       </Dialog>
 
       <ConfirmationModal
-        open={Boolean(statusRoute)}
-        onOpenChange={(open) => !open && setStatusRoute(null)}
-        title={statusRoute?.status === "ACTIVE" ? "Vô hiệu hóa tuyến?" : "Kích hoạt tuyến?"}
-        description={statusRoute ? `Bạn đang thao tác với tuyến ${statusRoute.routeCode} - ${statusRoute.routeName}.` : ""}
-        confirmText={statusRoute?.status === "ACTIVE" ? "Disable" : "Enable"}
-        variant={statusRoute?.status === "ACTIVE" ? "destructive" : "default"}
+        open={Boolean(statusStation)}
+        onOpenChange={(open) => !open && setStatusStation(null)}
+        title={statusStation?.status === "ACTIVE" ? "Vô hiệu hóa ga/trạm?" : "Kích hoạt ga/trạm?"}
+        description={statusStation ? `Bạn đang thao tác với ga/trạm ${statusStation.stationCode} - ${statusStation.stationName}.` : ""}
+        confirmText={statusStation?.status === "ACTIVE" ? "Disable" : "Enable"}
+        variant={statusStation?.status === "ACTIVE" ? "destructive" : "default"}
         loading={statusLoading}
         onConfirm={() => void handleToggleStatus()}
       />

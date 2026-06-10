@@ -17,11 +17,22 @@ export const API_ENDPOINTS = {
   },
   route: {
     listRoutes: "/route/list-routes",
+    getRoute: (routeId: number) => `/route/get-route/${routeId}`,
     createRoute: "/route/create-route",
     updateRoute: (routeId: number) => `/route/update-route/${routeId}`,
     enableRoute: (routeId: number) => `/route/enable-route/${routeId}`,
     disableRoute: (routeId: number) => `/route/disable-route/${routeId}`,
     previewImportRoutes: "/route/preview-import-routes",
     confirmImportRoutes: "/route/confirm-import-routes",
+  },
+  station: {
+    listStations: "/station/list-stations",
+    getStation: (stationId: number) => `/station/get-station/${stationId}`,
+    createStation: "/station/create-station",
+    updateStation: (stationId: number) => `/station/update-station/${stationId}`,
+    enableStation: (stationId: number) => `/station/enable-station/${stationId}`,
+    disableStation: (stationId: number) => `/station/disable-station/${stationId}`,
+    previewImportStations: "/station/preview-import-stations",
+    confirmImportStations: "/station/confirm-import-stations",
   },
 } as const

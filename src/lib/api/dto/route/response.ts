@@ -11,6 +11,21 @@ export interface TransitRoute {
   updatedAt?: string
 }
 
+export interface RouteDetailStation {
+  id: number
+  routeId: number
+  routeCode: string
+  stationCode: string
+  stationName: string
+  stationOrder: number
+  status: MasterDataStatus
+}
+
+export interface RouteDetail extends TransitRoute {
+  stationCount: number
+  stations: RouteDetailStation[]
+}
+
 export interface RouteListResponse {
   items: TransitRoute[]
   page: number

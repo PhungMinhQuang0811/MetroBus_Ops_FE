@@ -1,6 +1,6 @@
 import { ApiError } from "@/lib/api"
 
-export const API_ERROR_MESSAGES: Record<number, string> = {
+export const AUTH_ERROR_MESSAGES: Record<number, string> = {
   1000: "Thành công",
 
   2000: "Vui lòng nhập đầy đủ thông tin bắt buộc",
@@ -42,26 +42,83 @@ export const API_ERROR_MESSAGES: Record<number, string> = {
   4011: "Bạn phải đổi mật khẩu trước khi sử dụng tài khoản này.",
 }
 
+export const OPS_ERROR_MESSAGES: Record<number, string> = {
+  1000: "Thành công",
+
+  2000: "Vui lòng nhập đầy đủ thông tin bắt buộc",
+  2001: "Trang phải lớn hơn hoặc bằng 0 và số dòng mỗi trang phải từ 1 đến 100",
+  2002: "Từ khóa tìm kiếm quá dài",
+  2003: "Mã operator không hợp lệ",
+  2004: "Mã tuyến không hợp lệ",
+  2005: "Loại hình vận tải không hợp lệ",
+  2006: "Trạng thái master data không hợp lệ",
+  2007: "Tên tuyến không được vượt quá 255 ký tự",
+  2008: "Mã ga/trạm không hợp lệ",
+  2009: "Tên ga/trạm không được vượt quá 255 ký tự",
+  2010: "Thứ tự ga/trạm phải lớn hơn hoặc bằng 1",
+
+  3000: "Mã tuyến đã tồn tại trong operator",
+  3001: "Tuyến đang hoạt động",
+  3002: "Tuyến đã bị vô hiệu hóa",
+  3003: "Không tìm thấy operator",
+  3004: "Không tìm thấy tuyến",
+  3005: "Không tìm thấy ga/trạm",
+  3006: "Mã ga/trạm đã tồn tại trong tuyến",
+  3007: "Thứ tự ga/trạm đã tồn tại trong tuyến",
+  3008: "Ga/trạm đang hoạt động",
+  3009: "Ga/trạm đã bị vô hiệu hóa",
+  3014: "File import không hợp lệ",
+  3015: "File import có dòng dữ liệu không hợp lệ",
+
+  4000: "Đã có lỗi hệ thống xảy ra",
+  4002: "Bạn cần đăng nhập để tiếp tục",
+  4006: "Tài khoản đang bị vô hiệu hóa hoặc không hoạt động",
+  4007: "Bạn không có quyền truy cập tài nguyên này",
+  4009: "CSRF token bị thiếu hoặc không hợp lệ",
+  4012: "Tài khoản chưa có phạm vi operator hợp lệ",
+  4013: "Bạn không có quyền truy cập dữ liệu của operator khác",
+}
+
+export const API_ERROR_MESSAGES = AUTH_ERROR_MESSAGES
+
 const BACKEND_ERROR_MESSAGE_TRANSLATIONS: Record<string, string> = {
   "{fieldName} is required": "Vui lòng nhập đầy đủ thông tin bắt buộc",
   "Password must be at least 9 characters and contain both letters and numbers": "Mật khẩu phải có ít nhất 9 ký tự và bao gồm cả chữ lẫn số",
   "Invalid operator role selection": "Vai trò được chọn không hợp lệ",
   "Page must be >= 0 and size must be between 1 and 100": "Trang phải lớn hơn hoặc bằng 0 và số dòng mỗi trang phải từ 1 đến 100",
+  "Operator id is invalid": "Mã operator không hợp lệ",
   "Account id is invalid": "Mã tài khoản không hợp lệ",
   "Search keyword is too long": "Từ khóa tìm kiếm quá dài",
   "New password and confirm password do not match": "Mật khẩu xác nhận không khớp",
   "Current password is incorrect": "Mật khẩu hiện tại không chính xác",
   "Password reset has not been requested for this account": "Tài khoản này chưa gửi yêu cầu đặt lại mật khẩu",
+  "Invalid password status": "Trạng thái mật khẩu không hợp lệ",
+  "Route code already exists in operator": "Mã tuyến đã tồn tại trong operator",
   "Invalid transport type": "Loại hình vận tải không hợp lệ",
   "Invalid master data status": "Trạng thái master data không hợp lệ",
   "Route name must not exceed 255 characters": "Tên tuyến không được vượt quá 255 ký tự",
   "Route id is invalid": "Mã tuyến không hợp lệ",
+  "Station id is invalid": "Mã ga/trạm không hợp lệ",
   "Operator scope is required": "Tài khoản chưa có phạm vi operator hợp lệ",
   "You do not have permission to access data from another operator": "Bạn không có quyền truy cập dữ liệu của operator khác",
   "Route is already active": "Tuyến đang hoạt động",
   "Route is already disabled": "Tuyến đã bị vô hiệu hóa",
+  "Station is already active": "Ga/trạm đang hoạt động",
+  "Station is already disabled": "Ga/trạm đã bị vô hiệu hóa",
   "Operator not found": "Không tìm thấy operator",
   "Route not found": "Không tìm thấy tuyến",
+  "Station not found": "Không tìm thấy ga/trạm",
+  "Station code already exists in route": "Mã ga/trạm đã tồn tại trong tuyến",
+  "Station order already exists": "Thứ tự ga/trạm đã tồn tại trong tuyến",
+  "Station order already existed": "Thứ tự ga/trạm đã tồn tại trong tuyến",
+  "Station order exists in route": "Thứ tự ga/trạm đã tồn tại trong tuyến",
+  "Station order existed": "Thứ tự ga/trạm đã tồn tại trong tuyến",
+  "Station name must not exceed 255 characters": "Tên ga/trạm không được vượt quá 255 ký tự",
+  "Station name is required": "Tên ga/trạm là bắt buộc",
+  "Station order is required": "Thứ tự ga/trạm là bắt buộc",
+  "Station order must be greater than or equal to 1": "Thứ tự ga/trạm phải lớn hơn hoặc bằng 1",
+  "Route code is required": "Mã tuyến là bắt buộc",
+  "Route code not found": "Không tìm thấy tuyến",
   "Route name is required": "Tên tuyến là bắt buộc",
   "Request body is invalid": "Dữ liệu gửi lên không hợp lệ",
   "Username or password is incorrect": "Thông tin đăng nhập không chính xác. Vui lòng thử lại.",
@@ -78,6 +135,7 @@ const BACKEND_ERROR_MESSAGE_TRANSLATIONS: Record<string, string> = {
   "Account is already enabled": "Tài khoản đã được kích hoạt",
   "Import file is invalid": "File import không hợp lệ",
   "Import file contains invalid rows": "File import có dòng dữ liệu không hợp lệ",
+  "Uncategorized error": "Đã có lỗi hệ thống xảy ra",
   "There was error happen during run time": "Đã có lỗi hệ thống xảy ra",
   "The error key could be misspelled": "Mã lỗi hệ thống không hợp lệ",
   "Unauthenticated access": "Bạn cần đăng nhập để tiếp tục",
@@ -95,10 +153,23 @@ export function getApiErrorMessageFromBackendMessage(message: string) {
   return BACKEND_ERROR_MESSAGE_TRANSLATIONS[message] || message
 }
 
+function getFallbackErrorMessage(error: ApiError) {
+  if (error.service === "ops") return OPS_ERROR_MESSAGES[error.response.code]
+  if (error.service === "auth") return AUTH_ERROR_MESSAGES[error.response.code]
+
+  if (error.status === 400) return "Dữ liệu gửi lên không hợp lệ"
+  if (error.status === 401) return "Bạn cần đăng nhập để tiếp tục"
+  if (error.status === 403) return "Bạn không có quyền thực hiện thao tác này"
+  if (error.status === 404) return "Không tìm thấy dữ liệu phù hợp"
+  if (error.status >= 500) return "Đã có lỗi hệ thống xảy ra"
+
+  return undefined
+}
+
 export function getApiErrorMessage(error: unknown) {
   if (!(error instanceof ApiError)) {
     return "Đã có lỗi xảy ra. Vui lòng thử lại."
   }
 
-  return BACKEND_ERROR_MESSAGE_TRANSLATIONS[error.response.message] || API_ERROR_MESSAGES[error.response.code] || "Đã có lỗi xảy ra. Vui lòng thử lại."
+  return BACKEND_ERROR_MESSAGE_TRANSLATIONS[error.response.message] || getFallbackErrorMessage(error) || "Đã có lỗi xảy ra. Vui lòng thử lại."
 }

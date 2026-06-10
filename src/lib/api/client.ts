@@ -74,6 +74,7 @@ export class ApiError<T = unknown> extends Error {
   constructor(
     public readonly status: number,
     public readonly response: ApiResponse<T>,
+    public readonly service: ApiService,
   ) {
     super(response.message)
     this.name = "ApiError"
@@ -123,7 +124,8 @@ async function refreshAccessToken() {
 }
 
 export async function apiRequest<T>(path: string, options: RequestOptions = {}) {
-  const response = await fetch(createUrl(path, options.query, options.service), createInit(options))
+  const service = options.service ?? "ticket"
+  const response = await fetch(createUrl(path, options.query, service), createInit(options))
   const payload = await parseApiResponse<T>(response)
 
   if (response.status === 401 && !options.skipAuthRefresh) {
@@ -139,13 +141,14 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}) 
   if (response.status === 401) redirectTo("/401")
   if (response.status === 403 && !options.skipForbiddenRedirect && shouldRedirectForbidden(payload)) redirectTo("/403")
 
-  if (!response.ok) throw new ApiError(response.status, payload)
+  if (!response.ok) throw new ApiError(response.status, payload, service)
 
   return payload
 }
 
 export async function apiRequestRaw(path: string, options: RequestOptions = {}) {
-  const response = await fetch(createUrl(path, options.query, options.service), createInit(options))
+  const service = options.service ?? "ticket"
+  const response = await fetch(createUrl(path, options.query, service), createInit(options))
   let payload: ApiResponse<unknown> | null = null
 
   const getPayload = async () => {
@@ -168,7 +171,7 @@ export async function apiRequestRaw(path: string, options: RequestOptions = {}) 
   if (response.status === 403 && !options.skipForbiddenRedirect && shouldRedirectForbidden(await getPayload())) redirectTo("/403")
 
   if (!response.ok) {
-    throw new ApiError(response.status, await getPayload())
+    throw new ApiError(response.status, await getPayload(), service)
   }
 
   return response

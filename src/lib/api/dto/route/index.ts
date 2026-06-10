@@ -8,6 +8,8 @@ export type {
   ConfirmImportRouteItem,
   ConfirmImportRoutesResponse,
   PreviewImportRoutesResponse,
+  RouteDetail,
+  RouteDetailStation,
   RouteImportError,
   RouteImportPreviewItem,
   RouteListResponse,

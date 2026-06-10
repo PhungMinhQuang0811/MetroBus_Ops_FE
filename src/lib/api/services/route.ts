@@ -6,6 +6,7 @@ import type {
   PreviewImportRoutesResponse,
   RouteListResponse,
   RouteMutationRequest,
+  RouteDetail,
   TransitRoute,
 } from "../dto/route"
 
@@ -19,6 +20,8 @@ function createImportFormData(file: File) {
 export const routeApi = {
   listRoutes: (query: ListRoutesQuery) =>
     apiRequest<RouteListResponse>(API_ENDPOINTS.route.listRoutes, { service: "ops", method: "GET", query }),
+  getRoute: (routeId: number) =>
+    apiRequest<RouteDetail>(API_ENDPOINTS.route.getRoute(routeId), { service: "ops", method: "GET" }),
   createRoute: (body: RouteMutationRequest) =>
     apiRequest<TransitRoute>(API_ENDPOINTS.route.createRoute, { service: "ops", method: "POST", body }),
   updateRoute: (routeId: number, body: RouteMutationRequest) =>
