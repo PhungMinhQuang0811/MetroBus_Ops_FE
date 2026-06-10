@@ -3,6 +3,7 @@ export type { ApiService } from "./client"
 export { API_ENDPOINTS } from "./endpoints"
 export { accountApi } from "./services/account"
 export { identityApi } from "./services/identity"
+export { routeApi } from "./services/route"
 export type { ApiResponse, ListResult } from "./dto/common"
 export type {
   Account,
@@ -18,3 +19,16 @@ export type {
   ResetAccountPasswordResponse,
 } from "./dto/account"
 export type { PasswordStatus } from "./dto/identity"
+export type {
+  ConfirmImportRouteItem,
+  ConfirmImportRoutesResponse,
+  ListRoutesQuery,
+  MasterDataStatus,
+  PreviewImportRoutesResponse,
+  RouteImportError,
+  RouteImportPreviewItem,
+  RouteListResponse,
+  RouteMutationRequest,
+  TransitRoute,
+  TransportType,
+} from "./dto/route"

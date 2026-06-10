@@ -52,6 +52,18 @@ const BACKEND_ERROR_MESSAGE_TRANSLATIONS: Record<string, string> = {
   "New password and confirm password do not match": "Mật khẩu xác nhận không khớp",
   "Current password is incorrect": "Mật khẩu hiện tại không chính xác",
   "Password reset has not been requested for this account": "Tài khoản này chưa gửi yêu cầu đặt lại mật khẩu",
+  "Invalid transport type": "Loại hình vận tải không hợp lệ",
+  "Invalid master data status": "Trạng thái master data không hợp lệ",
+  "Route name must not exceed 255 characters": "Tên tuyến không được vượt quá 255 ký tự",
+  "Route id is invalid": "Mã tuyến không hợp lệ",
+  "Operator scope is required": "Tài khoản chưa có phạm vi operator hợp lệ",
+  "You do not have permission to access data from another operator": "Bạn không có quyền truy cập dữ liệu của operator khác",
+  "Route is already active": "Tuyến đang hoạt động",
+  "Route is already disabled": "Tuyến đã bị vô hiệu hóa",
+  "Operator not found": "Không tìm thấy operator",
+  "Route not found": "Không tìm thấy tuyến",
+  "Route name is required": "Tên tuyến là bắt buộc",
+  "Request body is invalid": "Dữ liệu gửi lên không hợp lệ",
   "Username or password is incorrect": "Thông tin đăng nhập không chính xác. Vui lòng thử lại.",
   "Username already exists": "Username đã tồn tại",
   "Failed to blacklist token": "Không thể vô hiệu hóa token",
@@ -88,5 +100,5 @@ export function getApiErrorMessage(error: unknown) {
     return "Đã có lỗi xảy ra. Vui lòng thử lại."
   }
 
-  return API_ERROR_MESSAGES[error.response.code] || getApiErrorMessageFromBackendMessage(error.response.message) || "Đã có lỗi xảy ra. Vui lòng thử lại."
+  return BACKEND_ERROR_MESSAGE_TRANSLATIONS[error.response.message] || API_ERROR_MESSAGES[error.response.code] || "Đã có lỗi xảy ra. Vui lòng thử lại."
 }

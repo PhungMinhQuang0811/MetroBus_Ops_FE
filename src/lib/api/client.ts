@@ -3,6 +3,7 @@ import { API_ENDPOINTS } from "./endpoints"
 
 export const API_BASE_URLS = {
   auth: "/bff",
+  ops: "/bff",
   ticket: process.env.NEXT_PUBLIC_TICKET_API_BASE_URL || "http://localhost:8080/vdt",
 } as const
 

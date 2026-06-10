@@ -15,4 +15,13 @@ export const API_ENDPOINTS = {
     confirmImportAccounts: "/account/confirm-import-accounts",
     resetAccountPassword: "/account/reset-password",
   },
+  route: {
+    listRoutes: "/route/list-routes",
+    createRoute: "/route/create-route",
+    updateRoute: (routeId: number) => `/route/update-route/${routeId}`,
+    enableRoute: (routeId: number) => `/route/enable-route/${routeId}`,
+    disableRoute: (routeId: number) => `/route/disable-route/${routeId}`,
+    previewImportRoutes: "/route/preview-import-routes",
+    confirmImportRoutes: "/route/confirm-import-routes",
+  },
 } as const
