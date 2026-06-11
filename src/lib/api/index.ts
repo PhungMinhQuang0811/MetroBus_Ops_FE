@@ -5,6 +5,7 @@ export { accountApi } from "./services/account"
 export { identityApi } from "./services/identity"
 export { routeApi } from "./services/route"
 export { stationApi } from "./services/station"
+export { deviceApi } from "./services/device"
 export type { ApiResponse, ListResult } from "./dto/common"
 export type {
   Account,
@@ -49,3 +50,22 @@ export type {
   StationListResponse,
   StationMutationRequest,
 } from "./dto/station"
+export type {
+  ConfirmImportDeviceItem,
+  ConfirmImportDevicesResponse,
+  Device,
+  DeviceCreateRequest,
+  DeviceDetail,
+  DeviceDirection,
+  DeviceEditableStatus,
+  DeviceImportError,
+  DeviceImportPreviewItem,
+  DeviceLatestIncident,
+  DeviceListResponse,
+  DeviceMutationResponse,
+  DeviceStatus,
+  DeviceType,
+  DeviceUpdateRequest,
+  ListDevicesQuery,
+  PreviewImportDevicesResponse,
+} from "./dto/device"

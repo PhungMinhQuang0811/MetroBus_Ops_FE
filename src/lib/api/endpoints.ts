@@ -35,4 +35,14 @@ export const API_ENDPOINTS = {
     previewImportStations: "/station/preview-import-stations",
     confirmImportStations: "/station/confirm-import-stations",
   },
+  device: {
+    listDevices: "/device/list-devices",
+    getDevice: (deviceId: number) => `/device/get-device/${deviceId}`,
+    createDevice: "/device/create-device",
+    updateDevice: (deviceId: number) => `/device/update-device/${deviceId}`,
+    enableDevice: (deviceId: number) => `/device/enable-device/${deviceId}`,
+    disableDevice: (deviceId: number) => `/device/disable-device/${deviceId}`,
+    previewImportDevices: "/device/preview-import-devices",
+    confirmImportDevices: "/device/confirm-import-devices",
+  },
 } as const
