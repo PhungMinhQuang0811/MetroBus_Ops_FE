@@ -45,4 +45,8 @@ export const API_ENDPOINTS = {
     previewImportDevices: "/device/preview-import-devices",
     confirmImportDevices: "/device/confirm-import-devices",
   },
+  transaction: {
+    searchTransactions: "/transaction/search-transactions",
+    getTransactionDetail: "/transaction/get-transaction-detail",
+  },
 } as const

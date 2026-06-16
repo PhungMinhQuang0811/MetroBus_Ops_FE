@@ -6,6 +6,7 @@ export { identityApi } from "./services/identity"
 export { routeApi } from "./services/route"
 export { stationApi } from "./services/station"
 export { deviceApi } from "./services/device"
+export { transactionApi } from "./services/transaction"
 export type { ApiResponse, ListResult } from "./dto/common"
 export type {
   Account,
@@ -69,3 +70,18 @@ export type {
   ListDevicesQuery,
   PreviewImportDevicesResponse,
 } from "./dto/device"
+export type {
+  CardStatus,
+  EntitlementStatus,
+  ListTransactionsQuery,
+  MediaType,
+  TapType,
+  TicketProcessingStatus,
+  TicketUsageStatus,
+  Transaction,
+  TransactionDecision,
+  TransactionDetail,
+  TransactionListResponse,
+  TransactionReason,
+  TransactionSyncStatus,
+} from "./dto/transaction"

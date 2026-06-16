@@ -51,7 +51,7 @@ Header cho `OPERATOR_MANAGER`:
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────────────┐
-│ [Logo] Tổng quan  Master data ▼  Thiết bị ▼  Giao dịch  Dữ liệu vé  Cấu hình vận hành ▼  Quản lý lô dữ liệu  [A] │
+│ [Logo] Tổng quan  Master data ▼  Thiết bị ▼  Giao dịch  Cấu hình vận hành ▼  Quản lý lô dữ liệu  [A] │
 └────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -72,7 +72,7 @@ Cấu hình vận hành ▼
 └── Trạng thái áp dụng
 ```
 
-`Giao dịch`, `Dữ liệu vé`, `Quản lý lô dữ liệu` và `Tổng quan` là item trực tiếp trên header, không có dropdown trong sitemap hiện tại.
+`Giao dịch`, `Quản lý lô dữ liệu` và `Tổng quan` là item trực tiếp trên header, không có dropdown trong sitemap hiện tại.
 
 Header cho `STATION_OPERATOR`:
 
@@ -93,7 +93,7 @@ Cấu hình vận hành ▼
 └── Trạng thái áp dụng
 ```
 
-Station operator chỉ thấy dữ liệu trong station được phân quyền. Không hiển thị master data, dữ liệu vé, quản lý lô dữ liệu hoặc audit.
+Station operator chỉ thấy dữ liệu trong station được phân quyền. Không hiển thị master data, quản lý lô dữ liệu hoặc audit.
 
 Avatar `[A]` là hình tròn nhỏ chứa chữ cái đầu của username. Khi bấm mở dropdown:
 
@@ -1178,9 +1178,8 @@ Quy tắc hiển thị:
 ### UC14 - Đồng bộ Card, Ticket, Entitlement từ Cấp 5
 
 **Actor:** `LEVEL5_SYSTEM`, System  
-**Actor xem màn hình giám sát:** `OPERATOR_MANAGER`  
-**Loại:** System integration; có màn hình giám sát tích hợp  
-**Phục vụ:** Theo dõi dữ liệu C5 đồng bộ xuống C4 để phục vụ cấp QR và verify tap.
+**Loại:** System integration; không có màn hình quản lý AFC Ops  
+**Phục vụ:** C4 nhận dữ liệu card/ticket/entitlement từ C5 để phục vụ cấp QR và verify tap.
 
 ```text
 LEVEL5_SYSTEM           Cấp 4 Sync Service         Read model / Redis
@@ -1191,109 +1190,14 @@ LEVEL5_SYSTEM           Cấp 4 Sync Service         Read model / Redis
       │                        ├─ upsert ─────────────────>│
       │        result          │                           │
       │<───────────────────────┤                           │
-
-Màn hình Thẻ:
-┌──────────────────────────────────────────────────────────────────────┐
-│ Thẻ                                                                  │
-├──────────────────────────────────────────────────────────────────────┤
-│ [Card ID] [Card type] [Status] [Status reason] [Lọc]                 │
-├──────────────────────────────────────────────────────────────────────┤
-│ Card ID | Card type | Status | Status reason | Updated at | Actions │
-│ CARD-001 | VIRTUAL_QR | ACTIVE | - | ... | Xem                       │
-├──────────────────────────────────────────────────────────────────────┤
-│ Rows per page [10]        1-10 of 500             < 1 2 3 ... 50 >   │
-└──────────────────────────────────────────────────────────────────────┘
-
-Màn hình Vé lượt:
-┌──────────────────────────────────────────────────────────────────────┐
-│ Vé lượt                                                              │
-├──────────────────────────────────────────────────────────────────────┤
-│ [Ticket ID] [Card ID] [Usage status] [Valid range] [Lọc]             │
-├──────────────────────────────────────────────────────────────────────┤
-│ Ticket ID | Card ID | Usage status | Valid from | Valid to | Updated at | Actions │
-│ TICKET-01 | CARD-001 | UNUSED | ... | ... | ... | Xem                │
-├──────────────────────────────────────────────────────────────────────┤
-│ Rows per page [10]        1-10 of 500             < 1 2 3 ... 50 >   │
-└──────────────────────────────────────────────────────────────────────┘
-
-Màn hình Gói chu kỳ:
-┌──────────────────────────────────────────────────────────────────────┐
-│ Gói chu kỳ                                                           │
-├──────────────────────────────────────────────────────────────────────┤
-│ [Entitlement ID] [Card ID] [Status] [Valid range] [Lọc]              │
-├──────────────────────────────────────────────────────────────────────┤
-│ Entitlement ID | Card ID | Status | Valid from | Valid to | Updated at | Actions │
-│ ENT-001        | CARD-001 | ACTIVE | ... | ... | ... | Xem           │
-├──────────────────────────────────────────────────────────────────────┤
-│ Rows per page [10]        1-10 of 240             < 1 2 3 ... 24 >   │
-└──────────────────────────────────────────────────────────────────────┘
 ```
 
-Màn hình chi tiết Thẻ:
+Không dựng các màn `Thẻ`, `Vé lượt`, `Gói chu kỳ` trong AFC Ops MVP. AFC Ops chỉ nhận dữ liệu từ C5 qua API/service integration và lưu read model để các luồng runtime sử dụng:
 
-```text
-┌──────────────────────────────────────────────────────────────────────┐
-│ Chi tiết thẻ CARD-001                                                │
-├──────────────────────────────────────────────────────────────────────┤
-│ Overview                                                             │
-│ Card ID | Card type | Status | Status reason                         │
-│ Source version | Updated at                                          │
-├──────────────────────────────────────────────────────────────────────┤
-│ Vé/gói đang gắn với thẻ                                               │
-│ Vé lượt active nếu có | Gói chu kỳ active nếu có                     │
-├──────────────────────────────────────────────────────────────────────┤
-│ Sync log gần đây từ C5                                                │
-│ Sync type | Version | Received at | Validation result                │
-├──────────────────────────────────────────────────────────────────────┤
-│ [Đóng]                                                               │
-└──────────────────────────────────────────────────────────────────────┘
-```
-
-Màn hình chi tiết Vé lượt:
-
-```text
-┌──────────────────────────────────────────────────────────────────────┐
-│ Chi tiết vé lượt TICKET-01                                           │
-├──────────────────────────────────────────────────────────────────────┤
-│ Ticket ID | Card ID | Usage status                                   │
-│ Valid from | Valid to | Route/scope nếu có                           │
-├──────────────────────────────────────────────────────────────────────┤
-│ Transaction gần đây sử dụng vé này                                    │
-│ Time | Station | Device | Tap type | Decision                        │
-├──────────────────────────────────────────────────────────────────────┤
-│ Sync log gần đây từ C5                                                │
-│ Sync type | Version | Received at | Validation result                │
-└──────────────────────────────────────────────────────────────────────┘
-```
-
-Màn hình chi tiết Gói chu kỳ:
-
-```text
-┌──────────────────────────────────────────────────────────────────────┐
-│ Chi tiết gói chu kỳ ENT-001                                          │
-├──────────────────────────────────────────────────────────────────────┤
-│ Entitlement ID | Card ID | Status                                    │
-│ Valid from | Valid to | Route/scope nếu có                           │
-├──────────────────────────────────────────────────────────────────────┤
-│ Transaction gần đây sử dụng gói này                                   │
-│ Time | Station | Device | Tap type | Decision                        │
-├──────────────────────────────────────────────────────────────────────┤
-│ Sync log gần đây từ C5                                                │
-│ Sync type | Version | Received at | Validation result                │
-└──────────────────────────────────────────────────────────────────────┘
-```
-
-Nguồn dữ liệu:
-
-| Field trên UI | Nguồn dữ liệu |
-| --- | --- |
-| `Sync type` | MongoDB `level5_business_sync_payloads.sync_type` |
-| `External ID` | MongoDB `level5_business_sync_payloads.external_id` |
-| `Version` | MongoDB `level5_business_sync_payloads.version` |
-| `Received at` | MongoDB `level5_business_sync_payloads.received_at` |
-| `Payload` | MongoDB `level5_business_sync_payloads.payload` |
-| `Validation result` | MongoDB `level5_business_sync_payloads.validation_result` |
-| `Status` | Kết quả xử lý/validation do BE trả về hoặc suy ra từ validation result |
+- UC22 dùng read model này để cấp QR động.
+- UC10 dùng read model này để verify QR/card/ticket/entitlement khi thiết bị gửi tap event.
+- UC11/UC19/UC20 có thể hiển thị mã tham chiếu card/ticket/entitlement trong transaction/batch nếu transaction đã map được.
+- Nếu cần debug đồng bộ C5, dùng tab `Tích hợp hệ thống` trong UC21 hoặc log kỹ thuật, không tạo màn nghiệp vụ riêng cho UC14.
 
 Sync type tối thiểu theo schema:
 
@@ -1306,12 +1210,11 @@ Sync type tối thiểu theo schema:
 
 Quy tắc hiển thị:
 
-- UC14 không có thao tác tạo/sửa dữ liệu từ UI; dữ liệu đến từ C5/System.
-- `OPERATOR_MANAGER` chỉ xem trạng thái đồng bộ, lỗi validation và payload nếu có quyền.
-- Không có tab `Của tôi` vì dữ liệu này do C5 đồng bộ, không do user AFC Ops tạo.
-- Tách 3 màn riêng vì `Thẻ`, `Vé lượt`, `Gói chu kỳ` có field nghiệp vụ khác nhau.
-- Màn hình này giúp biết dữ liệu card/ticket/entitlement đã có ở C4 hay chưa trước khi UC22 cấp QR và UC10 verify lượt quét.
-- Nếu payload là card status/blacklist cần phân phối xuống Cấp 3, chi tiết có thể hiển thị cờ `Ready for publish` để dùng ở UC16.
+- Không có menu `Dữ liệu vé` trong AFC Ops MVP.
+- Không có màn danh sách/chi tiết card, ticket hoặc entitlement ở UC14.
+- Không có thao tác tạo/sửa dữ liệu từ UI; dữ liệu đến từ C5/System.
+- Không có tab `Của tôi` vì dữ liệu này không do user AFC Ops tạo.
+- Nếu payload là card status/blacklist cần phân phối xuống Cấp 3, backend có thể sinh package `MEDIA_ACCESS_RULES` để xử lý tiếp ở UC15/UC16.
 
 ---
 
@@ -2136,7 +2039,7 @@ Tab này dùng `GET /auth/search-audit-logs`. Các action tiêu biểu: `LOGIN_S
 └────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-Tab này dùng `GET /afc-ops/search-audit-logs`. Các module/resource nên map theo sitemap: master data, thiết bị, cấu hình vận hành, đối soát dữ liệu, dữ liệu vé nếu có thao tác đồng bộ cần trace.
+Tab này dùng `GET /afc-ops/search-audit-logs`. Các module/resource nên map theo sitemap: master data, thiết bị, cấu hình vận hành và đối soát dữ liệu. Log đồng bộ C5 nếu cần debug nằm ở tab `Tích hợp hệ thống`, không tạo module dữ liệu vé riêng.
 
 #### Tab Tích hợp hệ thống
 
@@ -2331,9 +2234,9 @@ Passenger App             C4 QR Service             Read model / Redis
 
 Không cần wireframe AFC Ops riêng cho UC22. Nếu cần quan sát:
 
-- UC14 cho biết dữ liệu card/ticket/entitlement đã sync hay chưa.
 - UC11 cho biết kết quả sau khi QR được scan thành transaction.
-- Integration log kỹ thuật có thể ghi lỗi cấp QR, nhưng không phải màn hình nghiệp vụ bắt buộc.
+- UC21 tab `Tích hợp hệ thống` hoặc log kỹ thuật cho biết lỗi đồng bộ C5/cấp QR nếu BE ghi log.
+- UC14 chỉ là luồng nhận dữ liệu từ C5, không có màn AFC Ops riêng.
 
 ## 6. Sitemap tạm thời đã review/confirm
 
@@ -2349,10 +2252,6 @@ AFC Ops
 │   └── Sự cố thiết bị                     UC12, UC13
 ├── Giao dịch                              UC10, UC11 - OPERATOR_MANAGER, STATION_OPERATOR
 ├── Quản lý lô dữ liệu                     UC19, UC20 - OPERATOR_MANAGER
-├── Dữ liệu vé                             OPERATOR_MANAGER
-│   ├── Thẻ                                UC14
-│   ├── Vé lượt                            UC14
-│   └── Gói chu kỳ                         UC14
 ├── Cấu hình vận hành                      OPERATOR_MANAGER, STATION_OPERATOR
 │   ├── Gói cấu hình                       UC15, UC16
 │   └── Trạng thái áp dụng                 UC17
@@ -2393,7 +2292,6 @@ Ghi chú mục `Quản lý lô dữ liệu`:
 | Giám sát thiết bị | Không theo actor chính | Có toàn operator | Có trong station |
 | Transaction | Không theo actor chính | Có toàn operator | Có trong station |
 | Incident | Không theo actor chính | Có toàn operator | Có trong station |
-| Đồng bộ C5 | Màn hình giám sát đề xuất | Màn hình giám sát đề xuất | Không |
 | Cấu hình vận hành | Không theo actor chính | Có | Chỉ trạng thái áp dụng tại Cấp 3 nếu cần |
 | Dashboard | Không theo actor chính | Có | Không |
 | Đối soát dữ liệu | Không | Có | Không |
@@ -2401,9 +2299,8 @@ Ghi chú mục `Quản lý lô dữ liệu`:
 ## 8. Điểm cần review chung
 
 1. `OPERATOR_ADMIN` có cần xem Dashboard hay chỉ quản lý account/audit?
-2. Màn hình giám sát đồng bộ C5 của UC14 có cần trong MVP không?
-3. `STATION_OPERATOR` có cần xem trạng thái áp dụng package UC17 không?
-4. Chi tiết device/transaction/incident dùng page riêng hay modal chi tiết?
-5. Control package payload dùng JSON editor hay form sinh theo schema?
-6. Retry batch UC20 có cho phép thao tác thủ công hay chỉ System tự retry?
-7. Có cần màn hình integration log riêng hay gộp vào audit/chi tiết sync?
+2. `STATION_OPERATOR` có cần xem trạng thái áp dụng package UC17 không?
+3. Chi tiết device/transaction/incident dùng page riêng hay modal chi tiết?
+4. Control package payload dùng JSON editor hay form sinh theo schema?
+5. Retry batch UC20 có cho phép thao tác thủ công hay chỉ System tự retry?
+6. Có cần màn hình integration log riêng hay gộp vào audit/chi tiết sync?
