@@ -107,7 +107,11 @@ function formatDateTime(value?: string | null) {
 }
 
 function toApiDateTime(value: string) {
-  return value ? `${value}:00+07:00` : undefined
+  if (!value) return undefined
+
+  const date = new Date(value)
+
+  return Number.isNaN(date.getTime()) ? undefined : date.toISOString()
 }
 
 function parseNumericFilter(value: string) {

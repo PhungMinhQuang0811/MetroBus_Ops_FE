@@ -3143,6 +3143,184 @@ Response:
 
 #### API-AFC-028 - Create Batch
 
+`POST /batch/create-batch`
+
+Permission: `BATCH_WRITE`.
+
+Request:
+
+```json
+{
+  "fromTime": "2026-06-04T00:00:00",
+  "toTime": "2026-06-04T23:59:59"
+}
+```
+
+> Lưu ý: `fromTime`/`toTime` là `LocalDateTime` theo định dạng ISO không kèm offset/`Z` (ví dụ `2026-06-04T00:00:00`). Nếu gửi kèm offset (`+07:00`) hoặc hậu tố `Z`, Jackson không parse được và trả `2000 - Request body is invalid`. Service hiểu thời gian theo timezone `Asia/Ho_Chi_Minh`.
+
+Response:
+
+```json
+{
+  "code": 1000,
+  "message": "Success",
+  "result": {
+    "id": "uuid",
+    "batchCode": "OP01-20260604-0001",
+    "fromTime": "2026-06-04T00:00:00+07:00",
+    "toTime": "2026-06-04T23:59:59+07:00",
+    "transactionCount": 1500,
+    "status": "CREATED"
+  }
+}
+```
+
+Luồng:
+
+1. Tìm transaction `syncStatus = PENDING` trong khoảng thời gian.
+2. Tạo batch.
+3. Gắn `batch_id` vào transaction.
+4. Không gửi Cấp 5 ở bước này.
+
+Lỗi chính:
+
+| Code | Message | HTTP |
+| --- | --- | --- |
+| `2000` | Request body is invalid (body sai cú pháp JSON, sai kiểu, hoặc datetime kèm offset/`Z`) | 400 |
+| `2000` | fromTime is required (thiếu `fromTime`) | 400 |
+| `2000` | toTime is required (thiếu `toTime`) | 400 |
+| `2020` | Batch from time must be before or equal to to time (`fromTime` > `toTime`) | 400 |
+| `3025` | No eligible transactions found for the selected time range (không có transaction `PENDING` trong khoảng) | 400 |
+| `3003` | Operator not found (operator scope không tồn tại) | 404 |
+| `4002` | Unauthenticated access (chưa đăng nhập / token không hợp lệ) | 401 |
+| `4007` | You do not have permission to access this resource (thiếu permission `BATCH_WRITE`) | 403 |
+| `4012` | Operator scope is required (account chưa gắn operator scope) | 403 |
+| `4000` | Uncategorized error (lỗi hệ thống ngoài dự kiến) | 500 |
+
+#### API-AFC-029 - List Batches
+
+`GET /batch/list-batches?status=&from=&to=&page=0&size=20`
+
+Permission: `BATCH_READ`.
+
+Response:
+
+```json
+{
+  "code": 1000,
+  "message": "Success",
+  "result": {
+    "items": [
+      {
+        "id": "uuid",
+        "batchCode": "OP01-20260604-0001",
+        "fromTime": "2026-06-04T00:00:00+07:00",
+        "toTime": "2026-06-04T23:59:59+07:00",
+        "transactionCount": 1500,
+        "status": "CREATED",
+        "submittedAt": null,
+        "createdAt": "2026-06-04T23:00:00+07:00",
+        "updatedAt": "2026-06-04T23:00:00+07:00"
+      }
+    ],
+    "page": 0,
+    "size": 20,
+    "totalElements": 1,
+    "totalPages": 1
+  }
+}
+```
+
+Lỗi chính:
+
+| Code | Message | HTTP |
+| --- | --- | --- |
+| `2000` | from is required / to is required (query param sai định dạng datetime ISO) | 400 |
+| `2001` | Page must be >= 0 and size must be between 1 and 100 (`page` < 0, hoặc `size` < 1, hoặc `size` > 100) | 400 |
+| `2020` | Batch from time must be before or equal to to time (`from` > `to` khi cả hai cùng có) | 400 |
+| `3003` | Operator not found (operator scope không tồn tại) | 404 |
+| `4002` | Unauthenticated access (chưa đăng nhập / token không hợp lệ) | 401 |
+| `4007` | You do not have permission to access this resource (thiếu permission `BATCH_READ`) | 403 |
+| `4012` | Operator scope is required (account chưa gắn operator scope) | 403 |
+| `4000` | Uncategorized error (lỗi hệ thống ngoài dự kiến) | 500 |
+
+> Lưu ý: `status` là filter tùy chọn, không phân biệt hoa thường (được chuẩn hóa về uppercase). `from`/`to` ở dạng query param dùng định dạng ISO datetime (ví dụ `2026-06-04T00:00:00`); nếu bỏ trống sẽ mặc định lấy toàn bộ khoảng thời gian.
+
+#### API-AFC-028 - Create Batch
+
+`POST /batch/create-batch`
+
+Permission: `BATCH_WRITE`.
+
+Request:
+
+```json
+{
+  "fromTime": "2026-06-16T08:47:25.053Z",
+  "toTime": "2026-06-16T08:47:25.053Z"
+}
+```
+
+Response:
+
+```json
+{
+  "code": 1000,
+  "message": "Success",
+  "result": {
+    "id": "uuid",
+    "batchCode": "OP01-20260604-0001",
+    "fromTime": "2026-06-04T00:00:00+07:00",
+    "toTime": "2026-06-04T23:59:59+07:00",
+    "transactionCount": 1500,
+    "status": "CREATED"
+  }
+}
+```
+
+Luồng:
+
+1. Tìm transaction `syncStatus = PENDING` trong khoảng thời gian.
+2. Tạo batch.
+3. Gắn `batch_id` vào transaction.
+4. Không gửi Cấp 5 ở bước này.
+
+#### API-AFC-029 - List Batches
+
+`GET /batch/list-batches?status=&from=&to=&page=0&size=20`
+
+Permission: `BATCH_READ`.
+
+Response:
+
+```json
+{
+  "code": 1000,
+  "message": "Success",
+  "result": {
+    "items": [
+      {
+        "id": "uuid",
+        "batchCode": "OP01-20260604-0001",
+        "fromTime": "2026-06-04T00:00:00+07:00",
+        "toTime": "2026-06-04T23:59:59+07:00",
+        "transactionCount": 1500,
+        "status": "CREATED",
+        "submittedAt": null,
+        "createdAt": "2026-06-04T23:00:00+07:00",
+        "updatedAt": "2026-06-04T23:00:00+07:00"
+      }
+    ],
+    "page": 0,
+    "size": 20,
+    "totalElements": 1,
+    "totalPages": 1
+  }
+}
+```
+
+#### API-AFC-028 - Create Batch
+
 `POST /afc-ops/create-batch`
 
 Permission: `BATCH_WRITE`.
@@ -3216,11 +3394,13 @@ Response:
 
 ### UC20 - Gửi Batch Dữ Liệu Lên Cấp 5
 
-#### API-AFC-030 - Submit Batch To Level 5
+#### API-AFC-030 - Submit Batch To Level 5 (Dành cho Cron Job)
 
-`POST /afc-ops/submit-batch-to-level5/{batchId}`
+`POST /batch/submit-batch-to-level5/{batchId}`
 
-Permission: `BATCH_WRITE`.
+*(Lưu ý: API này được thiết kế để External Cron Job/Scheduler gọi tự động, không expose ra giao diện Frontend để người dùng bấm thủ công).*
+
+Permission: `BATCH_WRITE` hoặc cơ chế xác thực nội bộ (Internal Token).
 
 Request:
 
@@ -3251,7 +3431,7 @@ Response:
 
 Luồng:
 
-1. Load batch `CREATED` hoặc `FAILED` retryable.
+1. Cron job (hoặc kỹ thuật viên) gọi API với batch `CREATED` hoặc `FAILED` retryable.
 2. Build payload gồm transaction đã gắn batch.
 3. Gửi sang Cấp 5/mock.
 4. Lưu request/response vào `integration_exchange_logs`.
@@ -3264,7 +3444,6 @@ Lỗi chính:
 | --- | --- |
 | Cấp 5 unavailable | Batch `FAILED`, giữ transaction chưa `SYNCED` |
 | Cấp 5 reject | Batch `REJECTED`, lưu response |
-| Submit lại batch đã accepted | Trả trạng thái hiện tại hoặc yêu cầu `forceRetry` không được phép |
 
 ## 9. Audit APIs
 
@@ -3439,11 +3618,11 @@ Mock App trong MVP gọi API-AFC-032 để lấy QR payload, sau đó mock C2 sc
 
 ### Luồng D - Tạo Và Gửi Batch Lên Cấp 5
 
-1. Manager gọi `POST /afc-ops/create-batch`.
+1. Manager gọi `POST /batch/create-batch` (hoặc `/afc-ops/create-batch`).
 2. System gom transaction `PENDING` thành batch `CREATED`.
-3. Manager hoặc scheduler gọi `POST /afc-ops/submit-batch-to-level5/{batchId}`.
+3. Cron Job tự động quét các batch `CREATED` và gọi `POST /afc-ops/submit-batch-to-level5/{batchId}`.
 4. System gửi payload sang Cấp 5/mock.
-5. Cập nhật batch `ACCEPTED`, `REJECTED` hoặc `FAILED`.
+5. System cập nhật batch `ACCEPTED`, `REJECTED` hoặc `FAILED`.
 
 ### Luồng E - Tạo Account Nhân Sự
 

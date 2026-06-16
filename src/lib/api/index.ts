@@ -7,6 +7,7 @@ export { routeApi } from "./services/route"
 export { stationApi } from "./services/station"
 export { deviceApi } from "./services/device"
 export { transactionApi } from "./services/transaction"
+export { batchApi } from "./services/batch"
 export type { ApiResponse, ListResult } from "./dto/common"
 export type {
   Account,
@@ -85,3 +86,10 @@ export type {
   TransactionReason,
   TransactionSyncStatus,
 } from "./dto/transaction"
+export type {
+  Batch,
+  BatchListResponse,
+  BatchStatus,
+  CreateBatchRequest,
+  ListBatchesQuery,
+} from "./dto/batch"

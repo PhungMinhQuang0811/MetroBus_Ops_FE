@@ -49,4 +49,8 @@ export const API_ENDPOINTS = {
     searchTransactions: "/transaction/search-transactions",
     getTransactionDetail: "/transaction/get-transaction-detail",
   },
+  batch: {
+    listBatches: "/batch/list-batches",
+    createBatch: "/batch/create-batch",
+  },
 } as const

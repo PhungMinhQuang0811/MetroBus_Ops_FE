@@ -56,6 +56,7 @@ export const OPS_ERROR_MESSAGES: Record<number, string> = {
   2008: "Mã ga/trạm không hợp lệ",
   2009: "Tên ga/trạm không được vượt quá 255 ký tự",
   2010: "Thứ tự ga/trạm phải lớn hơn hoặc bằng 1",
+  2020: "Thời gian bắt đầu lô dữ liệu phải trước hoặc bằng thời gian kết thúc",
 
   3000: "Mã tuyến đã tồn tại trong operator",
   3001: "Tuyến đang hoạt động",
@@ -69,6 +70,7 @@ export const OPS_ERROR_MESSAGES: Record<number, string> = {
   3009: "Ga/trạm đã bị vô hiệu hóa",
   3014: "File import không hợp lệ",
   3015: "File import có dòng dữ liệu không hợp lệ",
+  3025: "Không có giao dịch chờ xử lý nào trong khoảng thời gian đã chọn",
 
   4000: "Đã có lỗi hệ thống xảy ra",
   4002: "Bạn cần đăng nhập để tiếp tục",
@@ -147,6 +149,12 @@ const BACKEND_ERROR_MESSAGE_TRANSLATIONS: Record<string, string> = {
   "Missing or invalid CSRF token": "CSRF token bị thiếu hoặc không hợp lệ",
   "Your account requires an administrator to reset the password.": "Tài khoản của bạn cần quản trị viên đặt lại mật khẩu.",
   "You must change your password before using this account.": "Bạn phải đổi mật khẩu trước khi sử dụng tài khoản này.",
+  "fromTime is required": "Thời gian bắt đầu là bắt buộc",
+  "toTime is required": "Thời gian kết thúc là bắt buộc",
+  "from is required": "Thời gian bắt đầu là bắt buộc",
+  "to is required": "Thời gian kết thúc là bắt buộc",
+  "Batch from time must be before or equal to to time": "Thời gian bắt đầu lô dữ liệu phải trước hoặc bằng thời gian kết thúc",
+  "No eligible transactions found for the selected time range": "Không có giao dịch chờ xử lý nào trong khoảng thời gian đã chọn",
 }
 
 export function getApiErrorMessageFromBackendMessage(message: string) {
