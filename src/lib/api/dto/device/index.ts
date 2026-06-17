@@ -6,6 +6,8 @@ export type {
   DeviceType,
   DeviceUpdateRequest,
   ListDevicesQuery,
+  GetDeviceStatusQuery,
+  GetDeviceHeartbeatsQuery,
 } from "./request"
 export type {
   ConfirmImportDeviceItem,
@@ -18,4 +20,9 @@ export type {
   DeviceListResponse,
   DeviceMutationResponse,
   PreviewImportDevicesResponse,
+  DeviceStatusOverviewItem,
+  DeviceStatusOverviewResponse,
+  DeviceHeartbeatHistoryItem,
+  DeviceHeartbeatHistoryResponse,
 } from "./response"
+

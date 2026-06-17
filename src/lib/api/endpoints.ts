@@ -44,6 +44,12 @@ export const API_ENDPOINTS = {
     disableDevice: (deviceId: number) => `/device/disable-device/${deviceId}`,
     previewImportDevices: "/device/preview-import-devices",
     confirmImportDevices: "/device/confirm-import-devices",
+    getDeviceStatus: "/afc-ops/get-device-status",
+    getDeviceHeartbeats: "/afc-ops/get-device-heartbeats",
+  },
+  incident: {
+    searchIncidents: "/afc-ops/search-incidents",
+    getIncident: (incidentId: string) => `/afc-ops/get-incident/${incidentId}`,
   },
   transaction: {
     searchTransactions: "/transaction/search-transactions",
@@ -54,3 +60,4 @@ export const API_ENDPOINTS = {
     createBatch: "/batch/create-batch",
   },
 } as const
+

@@ -9,6 +9,10 @@ import type {
   DeviceUpdateRequest,
   ListDevicesQuery,
   PreviewImportDevicesResponse,
+  GetDeviceStatusQuery,
+  GetDeviceHeartbeatsQuery,
+  DeviceStatusOverviewResponse,
+  DeviceHeartbeatHistoryResponse,
 } from "../dto/device"
 
 function createImportFormData(file: File) {
@@ -43,4 +47,9 @@ export const deviceApi = {
       method: "POST",
       body: createImportFormData(file),
     }),
+  getDeviceStatus: (query: GetDeviceStatusQuery) =>
+    apiRequest<DeviceStatusOverviewResponse>(API_ENDPOINTS.device.getDeviceStatus, { service: "ops", method: "GET", query }),
+  getDeviceHeartbeats: (query: GetDeviceHeartbeatsQuery) =>
+    apiRequest<DeviceHeartbeatHistoryResponse>(API_ENDPOINTS.device.getDeviceHeartbeats, { service: "ops", method: "GET", query }),
 }
+

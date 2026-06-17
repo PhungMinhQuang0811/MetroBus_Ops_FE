@@ -24,7 +24,7 @@ Ví dụ:
 
 - Dùng `/account/create-account` thay vì `POST /auth/accounts`.
 - Dùng `/route/create-route` thay vì `POST /route/routes`.
-- Dùng `/afc-ops/submit-tap-event` thay vì `POST /afc-ops/device-api/tap-events`.
+- Dùng `/transaction/submit-tap-event` thay vì `POST /afc-ops/device-api/tap-events`.
 
 ### 1.2. Response Chuẩn
 
@@ -97,7 +97,7 @@ Response page:
 | Ticket usage status | `UNUSED`, `IN_USE`, `USED`, `EXPIRED`, `CANCELLED` |
 | Tap type | `TAP_IN`, `TAP_OUT`, `CHECK` |
 | Transaction decision | `OPEN_GATE`, `DENY`, `ACCEPTED_FOR_FORWARDING` |
-| Transaction reason | `VALID`, `DEVICE_DISABLED`, `INVALID_DIRECTION`, `MEDIA_BLACKLISTED`, `CARD_INACTIVE`, `CARD_CANCELLED`, `UNKNOWN_MEDIA`, `QR_EXPIRED`, `QR_INVALID_SIGNATURE`, `QR_REPLAYED`, `ENTITLEMENT_EXPIRED`, `ENTITLEMENT_INACTIVE`, `TICKET_INVALID`, `TICKET_EXPIRED`, `TICKET_ALREADY_USED`, `TICKET_SCOPE_INVALID`, `ACTIVE_PRODUCT_CONFLICT` |
+| Transaction reason | `VALID`, `DEVICE_DISABLED`, `INVALID_DIRECTION`, `MEDIA_BLACKLISTED`, `CARD_INACTIVE`, `CARD_CANCELLED`, `UNKNOWN_MEDIA`, `QR_EXPIRED`, `QR_INVALID`, `QR_REPLAYED`, `ENTITLEMENT_EXPIRED`, `ENTITLEMENT_INACTIVE`, `TICKET_INVALID`, `TICKET_EXPIRED`, `TICKET_ALREADY_USED`, `TICKET_SCOPE_INVALID`, `ACTIVE_PRODUCT_CONFLICT` |
 | Transaction sync status | `PENDING`, `SYNCED`, `FAILED` |
 | Ticket processing status | `PENDING`, `CONFIRMED`, `FAILED` |
 | Package type | `DEVICE_CONFIG`, `MEDIA_ACCESS_RULES` |
@@ -2168,25 +2168,21 @@ Luồng:
 
 #### API-AFC-014 - Submit Tap Event
 
-`POST /afc-ops/submit-tap-event`
+`POST /transaction/submit-tap-event`
 
-Auth: `X-Device-Code`, `X-Device-Secret`.
+Auth MVP: `deviceCode` + `deviceSecret` trong request body.
 
 Request:
 
 ```json
 {
-  "eventId": "QR-BT-001-20260604-000001",
-  "mediaType": "VIRTUAL_QR",
-  "qrPayload": "signed-dynamic-qr-payload",
-  "tapType": "TAP_IN",
-  "occurredAt": "2026-06-04T10:05:00+07:00",
-  "direction": "ENTRY",
-  "rawPayload": {
-    "deviceSequence": 1001
-  }
+  "deviceCode": "GATE-001",
+  "deviceSecret": "device-secret",
+  "qrPayload": "AFCQR:v1:QR-SESSION-000001"
 }
 ```
+
+`direction` không truyền trong request. Cấp 4 lấy chiều xử lý từ `devices.direction` của `deviceCode`; UC10 cần chiều cụ thể `ENTRY` hoặc `EXIT` để suy ra `tapType = TAP_IN/TAP_OUT`.
 
 Response:
 
@@ -2196,7 +2192,6 @@ Response:
   "message": "Success",
   "result": {
     "transactionId": "uuid",
-    "eventId": "QR-BT-001-20260604-000001",
     "decision": "OPEN_GATE",
     "reason": "VALID",
     "serverTime": "2026-06-04T10:05:01+07:00"
@@ -2206,26 +2201,25 @@ Response:
 
 Luồng:
 
-1. Xác thực device.
-2. Kiểm tra idempotency theo `(deviceCode, eventId)`.
-3. Kiểm tra device active và direction hợp lệ.
-4. Verify chữ ký, TTL và replay của dynamic QR payload.
-5. Resolve `cardId` và đúng một sản phẩm active từ QR session: `ticketId` hoặc `entitlementId`.
-6. Kiểm tra card active/không blacklist, ticket hoặc entitlement active/còn hạn và scope hợp lệ.
-7. Lưu raw payload MongoDB.
-8. Lưu `afc_transactions` RDBMS.
-9. Trả decision cho device.
+1. Xác thực device bằng `deviceCode` và `deviceSecret`.
+2. Cấp 4 tự set `occurredAt/receivedAt = now()`.
+3. Kiểm tra device active và lấy direction từ cấu hình device.
+4. Parse `qrId` từ payload dạng `AFCQR:v1:{qrId}`.
+5. Resolve `cardId` và đúng một sản phẩm active từ Redis key `qr:session:{qrId}`.
+6. Kiểm tra QR chưa expire, chưa replay (`used=false`).
+7. Kiểm tra card active/không blacklist, ticket hoặc entitlement active/còn hạn.
+8. Nếu hợp lệ, set QR session `used=true` để chống replay trong TTL ngắn.
+9. Lưu `afc_transactions` RDBMS và trả decision cho device.
 
 Lỗi/idempotency:
 
 | Điều kiện | Kết quả |
 | --- | --- |
-| Gửi lại cùng `eventId` và payload giống nhau | Trả lại decision cũ |
-| Gửi lại cùng `eventId` nhưng payload khác | `409 TAP_EVENT_CONFLICT` |
+| `deviceCode` không tồn tại hoặc `deviceSecret` sai | HTTP auth/business error, không ghi transaction |
 | Device disabled | Trả `decision = DENY`, `reason = DEVICE_DISABLED` |
 | Card trong blacklist | Trả `decision = DENY`, `reason = MEDIA_BLACKLISTED` |
 | Card inactive/cancelled | Trả `decision = DENY`, `reason = CARD_INACTIVE` hoặc `CARD_CANCELLED` |
-| QR hết hạn, sai chữ ký hoặc bị replay | Trả `decision = DENY` với reason QR tương ứng |
+| QR sai format, hết hạn hoặc bị replay | Trả `decision = DENY` với reason QR tương ứng |
 | Entitlement hết hạn hoặc inactive | Trả `decision = DENY` với reason entitlement tương ứng |
 | Ticket không hợp lệ/hết hạn/đã dùng/sai scope | Trả `decision = DENY` với reason ticket tương ứng |
 | Card có cả ticket và entitlement active trong read model | Trả `decision = DENY`, `reason = ACTIVE_PRODUCT_CONFLICT` |
@@ -2292,6 +2286,43 @@ Response:
         "status": "ACTIVE",
         "lastSeenAt": "2026-06-04T10:00:00+07:00",
         "offlineSeconds": 5
+      }
+    ],
+    "page": 0,
+    "size": 20,
+    "totalElements": 1,
+    "totalPages": 1
+  }
+}
+```
+
+#### API-AFC-016B - Get Device Heartbeat History
+
+`GET /afc-ops/get-device-heartbeats?deviceId={deviceId}&page=0&size=20`
+
+Permission: `DEVICE_MONITOR_READ`.
+
+Response:
+
+```json
+{
+  "code": 1000,
+  "message": "Success",
+  "result": {
+    "items": [
+      {
+        "id": "mongo-heartbeat-id",
+        "deviceId": 10,
+        "deviceCode": "QR-BT-001",
+        "stationId": 1,
+        "status": "ACTIVE",
+        "firmwareVersion": "1.0.7",
+        "sentAt": "2026-06-04T10:21:00+07:00",
+        "receivedAt": "2026-06-04T10:21:05+07:00",
+        "payload": {
+          "cpuUsage": 12.5,
+          "memoryUsage": 64.2
+        }
       }
     ],
     "page": 0,
@@ -2410,201 +2441,11 @@ Response:
 
 UC11 core lấy dữ liệu từ RDBMS. Các tab `Raw device event`, `Ticket usage result`, `Audit liên quan` sẽ đọc MongoDB sau; hiện API trả các flag `*Available`/`rawEventRef` để FE hiển thị empty state hoặc disable tab.
 
-#### API-AFC-017 - Search Transactions
-
-`GET /afc-ops/search-transactions?from=&to=&routeId=&stationId=&deviceId=&cardId=&ticketId=&entitlementId=&tapType=&decision=&reason=&syncStatus=&ticketProcessingStatus=&page=0&size=20`
-
-Permission: `TRANSACTION_READ`.
-
-Response:
-
-```json
-{
-  "code": 1000,
-  "message": "Success",
-  "result": {
-    "items": [
-      {
-        "id": "uuid",
-        "eventId": "QR-BT-001-20260604-000001",
-        "routeId": 1,
-        "routeCode": "METRO-001",
-        "routeName": "Metro Line 1",
-        "stationId": 1,
-        "stationCode": "ST-001",
-        "stationName": "Ben Thanh",
-        "deviceId": 10,
-        "deviceCode": "QR-BT-001",
-        "mediaType": "VIRTUAL_QR",
-        "cardId": "CARD-000001",
-        "ticketId": null,
-        "entitlementId": "ENT-000001",
-        "qrId": "QR-SESSION-000001",
-        "tapType": "TAP_IN",
-        "occurredAt": "2026-06-04T10:05:00+07:00",
-        "decision": "OPEN_GATE",
-        "reason": "VALID",
-        "syncStatus": "PENDING",
-        "ticketProcessingStatus": null,
-        "batchId": null
-      }
-    ],
-    "page": 0,
-    "size": 20,
-    "totalElements": 1,
-    "totalPages": 1
-  }
-}
-```
-
-#### API-AFC-018 - Get Transaction Detail
-
-`GET /afc-ops/get-transaction-detail?transactionId={transactionId}`
-
-Permission: `TRANSACTION_READ`.
-
-Response:
-
-```json
-{
-  "code": 1000,
-  "message": "Success",
-  "result": {
-    "id": "uuid",
-    "eventId": "QR-BT-001-20260604-000001",
-    "operatorId": 1,
-    "operatorCode": "HCMC-METRO",
-    "operatorName": "HCMC Metro",
-    "routeId": 1,
-    "routeCode": "METRO-001",
-    "routeName": "Metro Line 1",
-    "stationId": 1,
-    "stationCode": "ST-001",
-    "stationName": "Ben Thanh",
-    "deviceId": 10,
-    "deviceCode": "QR-BT-001",
-    "deviceType": "QR_SCANNER_SIMULATOR",
-    "deviceDirection": "ENTRY",
-    "mediaType": "VIRTUAL_QR",
-    "cardId": "CARD-000001",
-    "cardUid": "04AABBCCDD",
-    "cardStatus": "ACTIVE",
-    "ticketId": null,
-    "ticketUsageStatus": null,
-    "entitlementId": "ENT-000001",
-    "entitlementStatus": "ACTIVE",
-    "qrId": "QR-SESSION-000001",
-    "qrPayloadHash": "sha256-qr-payload",
-    "tapType": "TAP_IN",
-    "journeyRef": null,
-    "occurredAt": "2026-06-04T10:05:00+07:00",
-    "receivedAt": "2026-06-04T10:05:01+07:00",
-    "decision": "OPEN_GATE",
-    "reason": "VALID",
-    "syncStatus": "PENDING",
-    "ticketProcessingStatus": null,
-    "batchId": null,
-    "rawEventRef": null,
-    "rawEventAvailable": false,
-    "ticketUsageResultAvailable": false,
-    "auditAvailable": false,
-    "createdAt": "2026-06-04T10:05:01+07:00",
-    "updatedAt": "2026-06-04T10:05:01+07:00"
-  }
-}
-```
-
-UC11 core lấy dữ liệu từ RDBMS. Các tab `Raw device event`, `Ticket usage result`, `Audit liên quan` sẽ đọc MongoDB sau; hiện API trả các flag `*Available`/`rawEventRef` để FE hiển thị empty state hoặc disable tab.
-
-#### API-AFC-017 - Search Transactions
-
-`GET /afc-ops/search-transactions?from=&to=&routeId=&stationId=&deviceId=&cardId=&ticketId=&entitlementId=&decision=&syncStatus=&ticketProcessingStatus=&page=0&size=20`
-
-Permission: `TRANSACTION_READ`.
-
-Response:
-
-```json
-{
-  "code": 1000,
-  "message": "Success",
-  "result": {
-    "items": [
-      {
-        "id": "uuid",
-        "eventId": "QR-BT-001-20260604-000001",
-        "routeId": 1,
-        "stationId": 1,
-        "deviceId": 10,
-        "deviceCode": "QR-BT-001",
-        "mediaType": "VIRTUAL_QR",
-        "cardId": "CARD-000001",
-        "ticketId": null,
-        "entitlementId": "ENT-000001",
-        "qrId": "QR-SESSION-000001",
-        "tapType": "TAP_IN",
-        "occurredAt": "2026-06-04T10:05:00+07:00",
-        "decision": "OPEN_GATE",
-        "reason": "VALID",
-        "syncStatus": "PENDING",
-        "ticketProcessingStatus": null,
-        "batchId": null
-      }
-    ],
-    "page": 0,
-    "size": 20,
-    "totalElements": 1,
-    "totalPages": 1
-  }
-}
-```
-
-#### API-AFC-018 - Get Transaction Detail
-
-`GET /afc-ops/get-transaction-detail?transactionId={transactionId}`
-
-Permission: `TRANSACTION_READ`.
-
-Response:
-
-```json
-{
-  "code": 1000,
-  "message": "Success",
-  "result": {
-    "id": "uuid",
-    "eventId": "QR-BT-001-20260604-000001",
-    "operatorId": 1,
-    "routeId": 1,
-    "stationId": 1,
-    "deviceId": 10,
-    "deviceCode": "QR-BT-001",
-    "mediaType": "VIRTUAL_QR",
-    "cardId": "CARD-000001",
-    "ticketId": null,
-    "entitlementId": "ENT-000001",
-    "qrId": "QR-SESSION-000001",
-    "qrPayloadHash": "sha256-qr-payload",
-    "tapType": "TAP_IN",
-    "occurredAt": "2026-06-04T10:05:00+07:00",
-    "receivedAt": "2026-06-04T10:05:01+07:00",
-    "decision": "OPEN_GATE",
-    "reason": "VALID",
-    "syncStatus": "PENDING",
-    "ticketProcessingStatus": null,
-    "batchId": null,
-    "rawEvent": {
-      "deviceSequence": 1001
-    }
-  }
-}
-```
-
 ### UC13 - Theo Dõi Incident Thiết Bị
 
 #### API-AFC-019 - Search Incidents
 
-`GET /afc-ops/search-incidents?from=&to=&stationId=&deviceId=&severity=&incidentType=&page=0&size=20`
+`GET /afc-ops/search-incidents?from=&to=&stationId=&deviceId=&severity=&incidentType=&resolved=&page=0&size=20`
 
 Permission: `INCIDENT_READ`.
 
@@ -2625,13 +2466,52 @@ Response:
         "severity": "HIGH",
         "message": "Gate arm jammed",
         "occurredAt": "2026-06-04T10:10:00+07:00",
-        "receivedAt": "2026-06-04T10:10:02+07:00"
+        "receivedAt": "2026-06-04T10:10:02+07:00",
+        "resolvedAt": null
       }
     ],
     "page": 0,
     "size": 20,
     "totalElements": 1,
     "totalPages": 1
+  }
+}
+```
+
+#### API-AFC-019B - Get Incident Detail
+
+`GET /afc-ops/get-incident/{incidentId}`
+
+Permission: `INCIDENT_READ`.
+
+Response:
+
+```json
+{
+  "code": 1000,
+  "message": "Success",
+  "result": {
+    "id": "mongo-id",
+    "deviceId": 10,
+    "deviceCode": "QR-BT-001",
+    "deviceType": "QR_SCANNER_SIMULATOR",
+    "deviceStatus": "ACTIVE",
+    "stationId": 1,
+    "stationCode": "ST-001",
+    "stationName": "Ben Thanh",
+    "routeId": 1,
+    "routeCode": "METRO-001",
+    "routeName": "Metro Line 1",
+    "incidentType": "GATE_JAMMED",
+    "severity": "HIGH",
+    "message": "Gate arm jammed",
+    "occurredAt": "2026-06-04T10:10:00+07:00",
+    "receivedAt": "2026-06-04T10:10:02+07:00",
+    "resolvedAt": null,
+    "payload": {
+      "barrierErrorCode": "ERR_BARRIER_MOTOR_OVERHEAT",
+      "retryCount": 3
+    }
   }
 }
 ```
@@ -2649,15 +2529,15 @@ C4 subscribe RabbitMQ do C5 publish:
 | Card | `afc.exchange` | `afc.level5-card-sync` | `card.status.changed` | Upsert card theo `cardId`, lưu `cardUid`, cập nhật status |
 | Blacklist | `afc.exchange` | `afc.level5-card-sync` | `blacklist.added`, `blacklist.removed` | Map thành `cards.status = BLACKLISTED` hoặc `ACTIVE` |
 | Ticket | `afc.exchange` | `afc.level5-ticket-sync` | `ticket.created` | Nếu `type = SINGLE_TRIP` thì upsert `tickets` |
-| Ticket unlink | `afc.exchange` | `afc.level5-ticket-sync` | `ticket.unlinked` | Gỡ `tickets.card_id`, không coi là cancel ticket |
+| Ticket unlink | `afc.exchange` | `afc.level5-ticket-sync` | `ticket.unlinked` | Đánh dấu `tickets.usage_status = CANCELLED` |
 | Entitlement | `afc.exchange` | `afc.level5-entitlement-sync` | `ticket.created` | Nếu `type = MONTHLY_PASS` thì upsert `entitlements` |
-| Entitlement unlink | `afc.exchange` | `afc.level5-entitlement-sync` | `ticket.unlinked` | Gỡ `entitlements.card_id`, không coi là cancel entitlement |
+| Entitlement unlink | `afc.exchange` | `afc.level5-entitlement-sync` | `ticket.unlinked` | Đánh dấu `entitlements.status = CANCELLED` |
 | Card snapshot | `afc.exchange` | `afc.level5-card-sync` | `sync.card.all` | Backfill/reconcile toàn bộ card theo `id` C5 |
 | Ticket snapshot | `afc.exchange` | `afc.level5-ticket-sync` | `sync.ticket.all` | Backfill/reconcile vé lượt nếu `type = SINGLE_TRIP` |
 | Entitlement snapshot | `afc.exchange` | `afc.level5-entitlement-sync` | `sync.ticket.all` | Backfill/reconcile vé tháng nếu `type = MONTHLY_PASS` |
 | Operator snapshot | `afc.exchange` | `afc.level5-operator-sync` | `sync.operator.all` | Upsert operator theo `code`; C4 vẫn giữ `operators.id` nội bộ |
 
-Payload C5 hiện tại không bắt buộc khớp 100% read model C4. C4 chấp nhận `cardId = null` ở ticket/monthly-pass vì C5 có thể tạo sản phẩm trước khi link card. Khi C5 gửi `cardId`, C4 tạo card placeholder nếu chưa có bản ghi card tương ứng.
+Payload C5 cần gửi `cardId` cho ticket/monthly-pass. C4 xử lý QR theo card nên ticket/entitlement không gắn card sẽ bị reject/ignore ở consumer. Khi C5 gửi `cardId`, C4 tạo card placeholder nếu chưa có bản ghi card tương ứng.
 
 C5 có các API trigger snapshot:
 
@@ -2676,236 +2556,23 @@ Mapping chính:
 | --- | --- |
 | `cardId` trong card event | `cards.id` |
 | `cardUid` | `cards.card_uid` |
+| `issuedAtStationId` | `cards.issued_at_station_ref` |
 | `ticket.type = SINGLE_TRIP` | `tickets.ticket_type = METRO_SINGLE_RIDE` |
 | `ticket.type = MONTHLY_PASS` | `entitlements.fare_product_code = MONTHLY_PASS`, `pass_period = MONTH` |
+| `ticket.fromStationId/toStationId` | `tickets.from_station_ref/to_station_ref` hoặc `entitlements.from_station_ref/to_station_ref` |
 | `ticket.mode = METRO/BUS/ANY` | `transport_type = METRO/BUS/ALL` |
 | `ticket.scope = null` ở monthly pass | `entitlements.pass_scope = NETWORK` |
 | `ticket.status = ACTIVE/null` | `tickets.usage_status = UNUSED` hoặc `entitlements.status = ACTIVE` |
 | `ticket.status = USED/EXPIRED/CANCELLED/REVOKED` | `tickets.usage_status` hoặc `entitlements.status` tương ứng nếu có |
 | `operator.code/name/status` | `operators.operator_code/operator_name/status`; `INACTIVE` map thành `DISABLED` |
 
-#### UC14 FE - Màn Hình Giám Sát Dữ Liệu Đồng Bộ
+#### UC14 FE - Tạm Dừng Màn Hình
 
-UC14 trên FE chỉ là màn hình hiển thị read model đã đồng bộ từ C5. FE không gọi API tạo/sửa card, ticket, entitlement và không trigger các API sync của C5.
+UC14 hiện chỉ triển khai phần đồng bộ dữ liệu nền từ C5 qua RabbitMQ để C4 có read model phục vụ xử lý kỹ thuật/runtime sau này.
 
-Màn hình tối thiểu:
-
-- `Thẻ`: danh sách và chi tiết card đã có ở C4.
-- `Vé lượt`: danh sách và chi tiết ticket `SINGLE_TRIP`.
-- `Gói chu kỳ`: danh sách và chi tiết entitlement/monthly pass.
-
-#### API-UC14-01 - List Cards
-
-`GET /afc-ops/cards?cardId=&cardType=&status=&statusReason=&page=0&size=20`
-
-Permission: `MASTER_DATA_READ`.
-
-Response:
-
-```json
-{
-  "code": 1000,
-  "message": "Success",
-  "result": {
-    "items": [
-      {
-        "cardId": "5b55f9f4-6a8b-4cf4-9c92-0de4b60e6111",
-        "cardUid": "04AABBCCDD",
-        "cardType": "VIRTUAL_QR",
-        "status": "ACTIVE",
-        "statusReason": null,
-        "sourceVersion": 1791420000000,
-        "syncedAt": "2026-06-12T16:20:00+07:00",
-        "updatedAt": "2026-06-12T16:20:00+07:00"
-      }
-    ],
-    "page": 0,
-    "size": 20,
-    "totalElements": 1,
-    "totalPages": 1
-  }
-}
-```
-
-#### API-UC14-02 - Get Card Detail
-
-`GET /afc-ops/cards/{cardId}`
-
-Permission: `MASTER_DATA_READ`.
-
-Response:
-
-```json
-{
-  "code": 1000,
-  "message": "Success",
-  "result": {
-    "cardId": "5b55f9f4-6a8b-4cf4-9c92-0de4b60e6111",
-    "cardUid": "04AABBCCDD",
-    "cardType": "VIRTUAL_QR",
-    "status": "ACTIVE",
-    "statusReason": null,
-    "sourceVersion": 1791420000000,
-    "syncedAt": "2026-06-12T16:20:00+07:00",
-    "updatedAt": "2026-06-12T16:20:00+07:00",
-    "activeTicket": {
-      "ticketId": "TICKET-000001",
-      "usageStatus": "UNUSED",
-      "validFrom": "2026-06-12T00:00:00+07:00",
-      "validTo": "2026-06-13T00:00:00+07:00"
-    },
-    "activeEntitlement": null
-  }
-}
-```
-
-#### API-UC14-03 - List Tickets
-
-`GET /afc-ops/tickets?ticketId=&cardId=&usageStatus=&validFrom=&validTo=&page=0&size=20`
-
-Permission: `MASTER_DATA_READ`.
-
-Response:
-
-```json
-{
-  "code": 1000,
-  "message": "Success",
-  "result": {
-    "items": [
-      {
-        "ticketId": "TICKET-000001",
-        "cardId": "5b55f9f4-6a8b-4cf4-9c92-0de4b60e6111",
-        "ticketType": "METRO_SINGLE_RIDE",
-        "routeScopeType": "NETWORK",
-        "operatorRef": "*",
-        "routeRef": "*",
-        "transportType": "METRO",
-        "usageStatus": "UNUSED",
-        "validFrom": "2026-06-12T00:00:00+07:00",
-        "validTo": "2026-06-13T00:00:00+07:00",
-        "usedAt": null,
-        "syncedAt": "2026-06-12T16:20:00+07:00",
-        "updatedAt": "2026-06-12T16:20:00+07:00"
-      }
-    ],
-    "page": 0,
-    "size": 20,
-    "totalElements": 1,
-    "totalPages": 1
-  }
-}
-```
-
-#### API-UC14-04 - Get Ticket Detail
-
-`GET /afc-ops/tickets/{ticketId}`
-
-Permission: `MASTER_DATA_READ`.
-
-Response:
-
-```json
-{
-  "code": 1000,
-  "message": "Success",
-  "result": {
-    "ticketId": "TICKET-000001",
-    "cardId": "5b55f9f4-6a8b-4cf4-9c92-0de4b60e6111",
-    "ticketType": "METRO_SINGLE_RIDE",
-    "routeScopeType": "NETWORK",
-    "operatorRef": "*",
-    "routeRef": "*",
-    "transportType": "METRO",
-    "usageStatus": "UNUSED",
-    "validFrom": "2026-06-12T00:00:00+07:00",
-    "validTo": "2026-06-13T00:00:00+07:00",
-    "firstTapAt": null,
-    "usedAt": null,
-    "sourceVersion": 1791420000000,
-    "syncedAt": "2026-06-12T16:20:00+07:00",
-    "updatedAt": "2026-06-12T16:20:00+07:00"
-  }
-}
-```
-
-#### API-UC14-05 - List Entitlements
-
-`GET /afc-ops/entitlements?entitlementId=&cardId=&status=&validFrom=&validTo=&page=0&size=20`
-
-Permission: `MASTER_DATA_READ`.
-
-Response:
-
-```json
-{
-  "code": 1000,
-  "message": "Success",
-  "result": {
-    "items": [
-      {
-        "entitlementId": "ENT-000001",
-        "cardId": "5b55f9f4-6a8b-4cf4-9c92-0de4b60e6111",
-        "fareProductCode": "MONTHLY_PASS",
-        "passPeriod": "MONTH",
-        "passScope": "NETWORK",
-        "operatorRef": "*",
-        "routeRef": "*",
-        "transportType": "ALL",
-        "status": "ACTIVE",
-        "validFrom": "2026-06-01T00:00:00+07:00",
-        "validTo": "2026-07-01T00:00:00+07:00",
-        "syncedAt": "2026-06-12T16:20:00+07:00",
-        "updatedAt": "2026-06-12T16:20:00+07:00"
-      }
-    ],
-    "page": 0,
-    "size": 20,
-    "totalElements": 1,
-    "totalPages": 1
-  }
-}
-```
-
-#### API-UC14-06 - Get Entitlement Detail
-
-`GET /afc-ops/entitlements/{entitlementId}`
-
-Permission: `MASTER_DATA_READ`.
-
-Response:
-
-```json
-{
-  "code": 1000,
-  "message": "Success",
-  "result": {
-    "entitlementId": "ENT-000001",
-    "cardId": "5b55f9f4-6a8b-4cf4-9c92-0de4b60e6111",
-    "fareProductCode": "MONTHLY_PASS",
-    "passPeriod": "MONTH",
-    "passScope": "NETWORK",
-    "operatorRef": "*",
-    "routeRef": "*",
-    "transportType": "ALL",
-    "passengerType": null,
-    "status": "ACTIVE",
-    "validFrom": "2026-06-01T00:00:00+07:00",
-    "validTo": "2026-07-01T00:00:00+07:00",
-    "sourceVersion": 1791420000000,
-    "syncedAt": "2026-06-12T16:20:00+07:00",
-    "updatedAt": "2026-06-12T16:20:00+07:00"
-  }
-}
-```
-
-Ghi chú hiển thị:
-
-- FE chỉ hiển thị dữ liệu đã được C5 đồng bộ xuống C4; không có nút tạo/sửa/xóa.
-- Nếu card/ticket/entitlement chưa link card thì `cardId = null`.
-- `sourceVersion`, `syncedAt`, `updatedAt` dùng để FE hiển thị trạng thái dữ liệu mới/cũ.
-- Sync log payload gốc là phần giám sát mở rộng; MVP có thể chưa hiển thị nếu BE chưa lưu log riêng.
-
+- FE chưa cần màn hình danh sách/chi tiết card, ticket, entitlement.
+- C4 chưa expose API đọc card, ticket, entitlement cho FE trong giai đoạn này.
+- Việc lọc dữ liệu theo operator sẽ xử lý sau khi thống nhất mapping station C5 với station C4.
 ### UC15 - Tạo Control Package Cấu Hình Vận Hành
 
 #### API-AFC-022 - Create Control Package
@@ -3246,161 +2913,13 @@ Lỗi chính:
 
 > Lưu ý: `status` là filter tùy chọn, không phân biệt hoa thường (được chuẩn hóa về uppercase). `from`/`to` ở dạng query param dùng định dạng ISO datetime (ví dụ `2026-06-04T00:00:00`); nếu bỏ trống sẽ mặc định lấy toàn bộ khoảng thời gian.
 
-#### API-AFC-028 - Create Batch
-
-`POST /batch/create-batch`
-
-Permission: `BATCH_WRITE`.
-
-Request:
-
-```json
-{
-  "fromTime": "2026-06-16T08:47:25.053Z",
-  "toTime": "2026-06-16T08:47:25.053Z"
-}
-```
-
-Response:
-
-```json
-{
-  "code": 1000,
-  "message": "Success",
-  "result": {
-    "id": "uuid",
-    "batchCode": "OP01-20260604-0001",
-    "fromTime": "2026-06-04T00:00:00+07:00",
-    "toTime": "2026-06-04T23:59:59+07:00",
-    "transactionCount": 1500,
-    "status": "CREATED"
-  }
-}
-```
-
-Luồng:
-
-1. Tìm transaction `syncStatus = PENDING` trong khoảng thời gian.
-2. Tạo batch.
-3. Gắn `batch_id` vào transaction.
-4. Không gửi Cấp 5 ở bước này.
-
-#### API-AFC-029 - List Batches
-
-`GET /batch/list-batches?status=&from=&to=&page=0&size=20`
-
-Permission: `BATCH_READ`.
-
-Response:
-
-```json
-{
-  "code": 1000,
-  "message": "Success",
-  "result": {
-    "items": [
-      {
-        "id": "uuid",
-        "batchCode": "OP01-20260604-0001",
-        "fromTime": "2026-06-04T00:00:00+07:00",
-        "toTime": "2026-06-04T23:59:59+07:00",
-        "transactionCount": 1500,
-        "status": "CREATED",
-        "submittedAt": null,
-        "createdAt": "2026-06-04T23:00:00+07:00",
-        "updatedAt": "2026-06-04T23:00:00+07:00"
-      }
-    ],
-    "page": 0,
-    "size": 20,
-    "totalElements": 1,
-    "totalPages": 1
-  }
-}
-```
-
-#### API-AFC-028 - Create Batch
-
-`POST /afc-ops/create-batch`
-
-Permission: `BATCH_WRITE`.
-
-Request:
-
-```json
-{
-  "fromTime": "2026-06-04T00:00:00+07:00",
-  "toTime": "2026-06-04T23:59:59+07:00"
-}
-```
-
-Response:
-
-```json
-{
-  "code": 1000,
-  "message": "Success",
-  "result": {
-    "id": "uuid",
-    "batchCode": "OP01-20260604-0001",
-    "fromTime": "2026-06-04T00:00:00+07:00",
-    "toTime": "2026-06-04T23:59:59+07:00",
-    "transactionCount": 1500,
-    "status": "CREATED"
-  }
-}
-```
-
-Luồng:
-
-1. Tìm transaction `syncStatus = PENDING` trong khoảng thời gian.
-2. Tạo batch.
-3. Gắn `batch_id` vào transaction.
-4. Không gửi Cấp 5 ở bước này.
-
-#### API-AFC-029 - List Batches
-
-`GET /afc-ops/list-batches?status=&from=&to=&page=0&size=20`
-
-Permission: `BATCH_READ`.
-
-Response:
-
-```json
-{
-  "code": 1000,
-  "message": "Success",
-  "result": {
-    "items": [
-      {
-        "id": "uuid",
-        "batchCode": "OP01-20260604-0001",
-        "fromTime": "2026-06-04T00:00:00+07:00",
-        "toTime": "2026-06-04T23:59:59+07:00",
-        "transactionCount": 1500,
-        "status": "CREATED",
-        "submittedAt": null,
-        "createdAt": "2026-06-04T23:00:00+07:00",
-        "updatedAt": "2026-06-04T23:00:00+07:00"
-      }
-    ],
-    "page": 0,
-    "size": 20,
-    "totalElements": 1,
-    "totalPages": 1
-  }
-}
-```
-
 ### UC20 - Gửi Batch Dữ Liệu Lên Cấp 5
 
-#### API-AFC-030 - Submit Batch To Level 5 (Dành cho Cron Job)
+#### API-AFC-030 - Submit Batch To Level 5
 
 `POST /batch/submit-batch-to-level5/{batchId}`
 
-*(Lưu ý: API này được thiết kế để External Cron Job/Scheduler gọi tự động, không expose ra giao diện Frontend để người dùng bấm thủ công).*
-
-Permission: `BATCH_WRITE` hoặc cơ chế xác thực nội bộ (Internal Token).
+Permission: `BATCH_WRITE`.
 
 Request:
 
@@ -3431,7 +2950,7 @@ Response:
 
 Luồng:
 
-1. Cron job (hoặc kỹ thuật viên) gọi API với batch `CREATED` hoặc `FAILED` retryable.
+1. Load batch `CREATED` hoặc `FAILED` retryable.
 2. Build payload gồm transaction đã gắn batch.
 3. Gửi sang Cấp 5/mock.
 4. Lưu request/response vào `integration_exchange_logs`.
@@ -3444,6 +2963,7 @@ Lỗi chính:
 | --- | --- |
 | Cấp 5 unavailable | Batch `FAILED`, giữ transaction chưa `SYNCED` |
 | Cấp 5 reject | Batch `REJECTED`, lưu response |
+| Submit lại batch đã accepted | Trả trạng thái hiện tại hoặc yêu cầu `forceRetry` không được phép |
 
 ## 9. Audit APIs
 
@@ -3536,10 +3056,7 @@ Request:
 
 ```json
 {
-  "cardId": "CARD-000001",
-  "productType": "ENTITLEMENT",
-  "ticketId": null,
-  "entitlementId": "ENT-000001"
+  "cardId": "CARD-000001"
 }
 ```
 
@@ -3551,15 +3068,14 @@ Response:
   "message": "Success",
   "result": {
     "qrId": "QR-SESSION-000001",
-    "cardId": "CARD-000001",
-    "ticketId": null,
-    "entitlementId": "ENT-000001",
-    "qrPayload": "signed-dynamic-qr-payload",
+    "qrPayload": "AFCQR:v1:QR-SESSION-000001",
     "expiresAt": "2026-06-04T10:05:30+07:00",
     "refreshAfterSeconds": 30
   }
 }
 ```
+
+`qrPayload` chỉ chứa session QR id để app render QR. `cardId`, `ticketId`, `entitlementId` không trả ra response và không nhúng trong QR; Cấp 4 lưu mapping trong Redis theo key `qr:session:{qrId}` với TTL ngắn.
 
 Luồng:
 
@@ -3568,7 +3084,7 @@ Luồng:
 3. Xác định đúng một active product của card: `ticket` vé lượt Metro hoặc `entitlement` vé tháng.
 4. Nếu là ticket, kiểm tra `usageStatus` cho phép hiển thị QR, còn hạn và đúng phạm vi.
 5. Nếu là entitlement, kiểm tra active, còn hạn và đúng phạm vi.
-6. Sinh `qrId`, nonce, TTL 30-60 giây, ký payload và lưu `qr:session:{qrId}` trong Redis.
+6. Sinh `qrId` TTL 30-60 giây, lưu `qr:session:{qrId}` trong Redis và trả payload ngắn dạng `AFCQR:v1:{qrId}`.
 7. Trả QR payload để App render.
 
 Lỗi chính:
@@ -3589,7 +3105,7 @@ Các nghiệp vụ App khác không thuộc `afc-ops-service`. Cấp 3/Cấp 4 c
 - `entitlements`;
 - trạng thái card/blacklist hiện hành.
 
-Mock App trong MVP gọi API-AFC-032 để lấy QR payload, sau đó mock C2 scan QR và gọi `POST /afc-ops/submit-tap-event`.
+Mock App trong MVP gọi API-AFC-032 để lấy QR payload, sau đó mock C2 scan QR và gọi `POST /transaction/submit-tap-event`.
 
 ## 11. Luồng API Theo UC
 
@@ -3602,7 +3118,7 @@ Mock App trong MVP gọi API-AFC-032 để lấy QR payload, sau đó mock C2 sc
 
 ### Luồng B - Thiết Bị Gửi Tap Event
 
-1. Mock Cấp 2 gọi `POST /afc-ops/submit-tap-event`.
+1. Mock Cấp 2 gọi `POST /transaction/submit-tap-event`.
 2. System xác thực device và ghi transaction.
 3. System trả `OPEN_GATE` hoặc `DENY`.
 4. Cấp 4 có thể tra cứu bằng `GET /afc-ops/search-transactions`.
@@ -3618,11 +3134,11 @@ Mock App trong MVP gọi API-AFC-032 để lấy QR payload, sau đó mock C2 sc
 
 ### Luồng D - Tạo Và Gửi Batch Lên Cấp 5
 
-1. Manager gọi `POST /batch/create-batch` (hoặc `/afc-ops/create-batch`).
+1. Manager gọi `POST /afc-ops/create-batch`.
 2. System gom transaction `PENDING` thành batch `CREATED`.
-3. Cron Job tự động quét các batch `CREATED` và gọi `POST /afc-ops/submit-batch-to-level5/{batchId}`.
+3. Manager hoặc scheduler gọi `POST /afc-ops/submit-batch-to-level5/{batchId}`.
 4. System gửi payload sang Cấp 5/mock.
-5. System cập nhật batch `ACCEPTED`, `REJECTED` hoặc `FAILED`.
+5. Cập nhật batch `ACCEPTED`, `REJECTED` hoặc `FAILED`.
 
 ### Luồng E - Tạo Account Nhân Sự
 
@@ -3637,7 +3153,7 @@ Mock App trong MVP gọi API-AFC-032 để lấy QR payload, sau đó mock C2 sc
 1. App/C5 tạo card, ticket hoặc entitlement ở hệ sở hữu nghiệp vụ.
 2. C5 đồng bộ read model sang C4 qua RabbitMQ realtime event hoặc snapshot trigger `POST /api/afc/sync*` ở C5.
 3. App gọi `POST /afc-ops/generate-dynamic-qr` để lấy QR payload ngắn hạn từ card đã đồng bộ.
-4. Mock C2 scan QR và gọi `POST /afc-ops/submit-tap-event`.
+4. Mock C2 scan QR và gọi `POST /transaction/submit-tap-event`.
 5. C4 verify QR, card status, ticket/entitlement và blacklist rồi trả `OPEN_GATE` hoặc `DENY`.
 
 ## 12. Error Code Đề Xuất
@@ -3672,7 +3188,7 @@ Mock App trong MVP gọi API-AFC-032 để lấy QR payload, sau đó mock C2 sc
 | `ENTITLEMENT_INACTIVE` | 400 | Entitlement không active |
 | `ENTITLEMENT_EXPIRED` | 400 | Entitlement đã hết hạn |
 | `QR_EXPIRED` | 400 | QR động đã hết hạn |
-| `QR_INVALID_SIGNATURE` | 400 | Chữ ký QR không hợp lệ |
+| `QR_INVALID` | 400 | QR payload sai format hoặc không đọc được `qrId` |
 | `QR_REPLAYED` | 409 | QR/event bị phát hiện replay |
 | `PASS_SCOPE_INVALID` | 400 | Phạm vi vé không hợp lệ |
 

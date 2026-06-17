@@ -76,3 +76,43 @@ export interface ConfirmImportDevicesResponse {
   imported: number
   items: ConfirmImportDeviceItem[]
 }
+
+export interface DeviceStatusOverviewItem {
+  deviceId: number
+  deviceCode: string
+  stationId: number
+  stationName: string
+  deviceType: DeviceType
+  status: DeviceStatus
+  lastSeenAt?: string | null
+  offlineSeconds?: number
+}
+
+export interface DeviceStatusOverviewResponse {
+  items: DeviceStatusOverviewItem[]
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
+}
+
+export interface DeviceHeartbeatHistoryItem {
+  id: string
+  deviceId: number
+  deviceCode: string
+  stationId: number
+  status: DeviceStatus
+  firmwareVersion?: string | null
+  sentAt: string
+  receivedAt: string
+  payload?: Record<string, unknown> | null
+}
+
+export interface DeviceHeartbeatHistoryResponse {
+  items: DeviceHeartbeatHistoryItem[]
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
+}
+

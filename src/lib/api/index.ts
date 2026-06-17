@@ -6,6 +6,7 @@ export { identityApi } from "./services/identity"
 export { routeApi } from "./services/route"
 export { stationApi } from "./services/station"
 export { deviceApi } from "./services/device"
+export { incidentApi } from "./services/incident"
 export { transactionApi } from "./services/transaction"
 export { batchApi } from "./services/batch"
 export type { ApiResponse, ListResult } from "./dto/common"
@@ -70,6 +71,12 @@ export type {
   DeviceUpdateRequest,
   ListDevicesQuery,
   PreviewImportDevicesResponse,
+  GetDeviceStatusQuery,
+  GetDeviceHeartbeatsQuery,
+  DeviceStatusOverviewItem,
+  DeviceStatusOverviewResponse,
+  DeviceHeartbeatHistoryItem,
+  DeviceHeartbeatHistoryResponse,
 } from "./dto/device"
 export type {
   CardStatus,
@@ -93,3 +100,10 @@ export type {
   CreateBatchRequest,
   ListBatchesQuery,
 } from "./dto/batch"
+export type {
+  Incident,
+  IncidentDetail,
+  IncidentListResponse,
+  SearchIncidentsQuery,
+} from "./dto/incident"
+

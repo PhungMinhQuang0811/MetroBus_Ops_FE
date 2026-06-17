@@ -22,3 +22,18 @@ export interface DeviceCreateRequest {
 export interface DeviceUpdateRequest extends DeviceCreateRequest {
   status: DeviceEditableStatus
 }
+
+export interface GetDeviceStatusQuery {
+  routeId?: number
+  stationId?: number
+  status?: string
+  page?: number
+  size?: number
+}
+
+export interface GetDeviceHeartbeatsQuery {
+  deviceId: number
+  page?: number
+  size?: number
+}
+

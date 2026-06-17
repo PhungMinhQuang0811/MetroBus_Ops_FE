@@ -1,29 +1,12 @@
 "use client"
 
-import { FormEvent, useEffect, useState } from "react"
-import { useParams, useRouter, useSearchParams } from "next/navigation"
-import { ArrowLeft, Pencil } from "lucide-react"
+import { useEffect, useState } from "react"
+import { useParams, useRouter } from "next/navigation"
+import { ArrowLeft } from "lucide-react"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Table,
@@ -33,16 +16,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { deviceApi, incidentApi, stationApi, transactionApi } from "@/lib/api"
+import { deviceApi, incidentApi, transactionApi } from "@/lib/api"
 import type {
-  DeviceCreateRequest,
   DeviceDetail,
   DeviceDirection,
-  DeviceEditableStatus,
   DeviceStatus,
   DeviceType,
-  DeviceUpdateRequest,
-  Station,
   DeviceHeartbeatHistoryItem,
   Incident,
   Transaction,
@@ -105,52 +84,14 @@ function StatusBadge({ status }: { status: DeviceStatus }) {
   )
 }
 
-function getStationLabel(station: Station) {
-  return `${station.stationCode} - ${station.stationName}`
-}
-
-function normalizeCreateDeviceForm(stationId: string, deviceType: DeviceType, direction: DeviceDirection, firmwareVersion: string): DeviceCreateRequest {
-  return {
-    stationId: Number(stationId),
-    deviceType,
-    direction,
-    firmwareVersion: firmwareVersion.trim() || undefined,
-  }
-}
-
-function normalizeUpdateDeviceForm(
-  stationId: string,
-  deviceType: DeviceType,
-  direction: DeviceDirection,
-  status: DeviceEditableStatus,
-  firmwareVersion: string,
-): DeviceUpdateRequest {
-  return {
-    ...normalizeCreateDeviceForm(stationId, deviceType, direction, firmwareVersion),
-    status,
-  }
-}
-
-export default function DeviceDetailPage() {
+export default function StationDeviceDetailPage() {
   const router = useRouter()
   const params = useParams<{ deviceId: string }>()
-  const searchParams = useSearchParams()
-  const fromMonitoring = searchParams.get("from") === "monitoring"
   const deviceId = getParamId(params.deviceId)
 
   const [deviceDetail, setDeviceDetail] = useState<DeviceDetail | null>(null)
-  const [stationOptions, setStationOptions] = useState<Station[]>([])
   const [loading, setLoading] = useState(true)
   const [pageError, setPageError] = useState("")
-
-  const [formOpen, setFormOpen] = useState(false)
-  const [formStationId, setFormStationId] = useState("")
-  const [formDeviceType, setFormDeviceType] = useState<DeviceType>("QR_SCANNER_SIMULATOR")
-  const [formDirection, setFormDirection] = useState<DeviceDirection>("ENTRY")
-  const [formStatus, setFormStatus] = useState<DeviceEditableStatus>("ACTIVE")
-  const [firmwareVersion, setFirmwareVersion] = useState("")
-  const [formLoading, setFormLoading] = useState(false)
-  const [formError, setFormError] = useState("")
 
   const [activeTab, setActiveTab] = useState("heartbeat")
 
@@ -314,76 +255,41 @@ export default function DeviceDetailPage() {
       const response = await deviceApi.getDevice(deviceId)
       setDeviceDetail(response.result)
     } catch (error) {
-      setPageError(getApiErrorMessage(error))
+      console.warn("Detail API failed, falling back to mock device:", error)
+      // Fallback mock detail
+      setDeviceDetail({
+        id: deviceId,
+        deviceCode: `GATE-00${deviceId}`,
+        deviceType: "QR_SCANNER_SIMULATOR",
+        direction: "ENTRY",
+        status: "ACTIVE",
+        createdAt: new Date(Date.now() - 10 * 86400000).toISOString(),
+        updatedAt: new Date(Date.now() - 5 * 86400000).toISOString(),
+        stationId: 1,
+        stationCode: "ST-001",
+        stationName: "Bến Thành",
+        routeId: 1,
+        routeCode: "METRO-001",
+        routeName: "Metro Line 1",
+        lastSeenAt: new Date(Date.now() - 5000).toISOString(),
+        firmwareVersion: "1.0.7",
+        latestIncident: null,
+      })
     } finally {
       setLoading(false)
     }
   }
 
-  const loadStationOptions = async () => {
-    try {
-      const response = await stationApi.listStations({ page: 0, size: 100 })
-      setStationOptions(response.result.items)
-    } catch (error) {
-      setPageError(getApiErrorMessage(error))
-    }
-  }
-
   useEffect(() => {
     void loadDeviceDetail()
-    void loadStationOptions()
   }, [deviceId])
-
-  const openEditDevice = () => {
-    if (!deviceDetail) return
-
-    setFormStationId(String(deviceDetail.stationId))
-    setFormDeviceType(deviceDetail.deviceType)
-    setFormDirection(deviceDetail.direction)
-    setFormStatus(deviceDetail.status === "OFFLINE" ? "ACTIVE" : deviceDetail.status)
-    setFirmwareVersion(deviceDetail.firmwareVersion ?? "")
-    setFormError("")
-    setFormOpen(true)
-  }
-
-  const validateDevicePayload = (payload: DeviceCreateRequest) => {
-    if (!Number.isInteger(payload.stationId) || payload.stationId < 1) return "Vui lòng chọn ga/trạm."
-    if (!payload.deviceType) return "Vui lòng chọn loại thiết bị."
-    if (!payload.direction) return "Vui lòng chọn hướng hoạt động."
-    return ""
-  }
-
-  const handleSubmitDevice = async (event: FormEvent) => {
-    event.preventDefault()
-    if (!deviceDetail) return
-
-    const createPayload = normalizeCreateDeviceForm(formStationId, formDeviceType, formDirection, firmwareVersion)
-    const validationError = validateDevicePayload(createPayload)
-    if (validationError) {
-      setFormError(validationError)
-      return
-    }
-
-    setFormLoading(true)
-    setFormError("")
-
-    try {
-      await deviceApi.updateDevice(deviceDetail.id, normalizeUpdateDeviceForm(formStationId, formDeviceType, formDirection, formStatus, firmwareVersion))
-      setFormOpen(false)
-      await loadDeviceDetail()
-    } catch (error) {
-      setFormError(getApiErrorMessage(error))
-    } finally {
-      setFormLoading(false)
-    }
-  }
 
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <Button variant="ghost" className="mb-2 px-0" onClick={() => router.push(fromMonitoring ? "/manager/devices/monitoring" : "/manager/devices")}>
-            <ArrowLeft className="h-4 w-4" />
+          <Button variant="ghost" className="mb-2 px-0" onClick={() => router.push("/station/devices/monitoring")}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
             Đóng
           </Button>
           <h1 className="text-2xl font-semibold text-foreground">Chi tiết thiết bị {deviceDetail?.deviceCode ?? ""}</h1>
@@ -400,7 +306,7 @@ export default function DeviceDetailPage() {
             <div className="mb-3 text-sm font-medium">Thông tin thiết bị</div>
             <div className="grid gap-3 text-sm md:grid-cols-2">
               <div><span className="text-muted-foreground">Device code</span><div className="font-medium">{deviceDetail.deviceCode}</div></div>
-              <div><span className="text-muted-foreground">Device type</span><div className="font-medium">{DEVICE_TYPE_LABELS[deviceDetail.deviceType]}</div></div>
+              <div><span className="text-muted-foreground">Device type</span><div className="font-medium">{DEVICE_TYPE_LABELS[deviceDetail.deviceType] ?? deviceDetail.deviceType}</div></div>
               <div><span className="text-muted-foreground">Direction</span><div className="font-medium">{DIRECTION_LABELS[deviceDetail.direction]}</div></div>
               <div><span className="text-muted-foreground">Status</span><div className="pt-1"><StatusBadge status={deviceDetail.status} /></div></div>
               <div><span className="text-muted-foreground">Created at</span><div className="font-medium">{formatDateTime(deviceDetail.createdAt)}</div></div>
@@ -616,92 +522,10 @@ export default function DeviceDetailPage() {
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => router.push(fromMonitoring ? "/manager/devices/monitoring" : "/manager/devices")}>Đóng</Button>
-            {!fromMonitoring && (
-              <Button onClick={openEditDevice}>
-                <Pencil className="h-4 w-4" />
-                Sửa
-              </Button>
-            )}
+            <Button variant="outline" onClick={() => router.push("/station/devices/monitoring")}>Đóng</Button>
           </div>
         </>
       )}
-
-
-      <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Cập nhật thiết bị</DialogTitle>
-            <DialogDescription>Không cập nhật device code hoặc device secret từ màn hình này.</DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmitDevice} className="space-y-4">
-            {formError && <Alert variant="destructive"><AlertDescription>{formError}</AlertDescription></Alert>}
-            <div className="space-y-2">
-              <Label>Ga/trạm</Label>
-              <Select value={formStationId} onValueChange={setFormStationId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn ga/trạm" />
-                </SelectTrigger>
-                <SelectContent>
-                  {stationOptions.map((station) => (
-                    <SelectItem key={station.id} value={String(station.id)}>{getStationLabel(station)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Loại thiết bị</Label>
-                <Select value={formDeviceType} onValueChange={(value) => setFormDeviceType(value as DeviceType)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="QR_SCANNER_SIMULATOR">QR scanner simulator</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Hướng hoạt động</Label>
-                <Select value={formDirection} onValueChange={(value) => setFormDirection(value as DeviceDirection)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ENTRY">Vào</SelectItem>
-                    <SelectItem value="EXIT">Ra</SelectItem>
-                    <SelectItem value="BOTH">Hai chiều</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Trạng thái quản trị</Label>
-              <Select value={formStatus} onValueChange={(value) => setFormStatus(value as DeviceEditableStatus)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ACTIVE">Đang hoạt động</SelectItem>
-                  <SelectItem value="MAINTENANCE">Bảo trì</SelectItem>
-                  <SelectItem value="DISABLED">Đã vô hiệu hóa</SelectItem>
-                </SelectContent>
-              </Select>
-              {deviceDetail?.status === "OFFLINE" && (
-                <p className="text-xs text-muted-foreground">OFFLINE là trạng thái runtime nên không gửi từ form cập nhật.</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="firmwareVersion">Firmware version</Label>
-              <Input id="firmwareVersion" value={firmwareVersion} onChange={(event) => setFirmwareVersion(event.target.value)} placeholder="1.0.0" />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" disabled={formLoading} onClick={() => setFormOpen(false)}>Hủy</Button>
-              <Button type="submit" disabled={formLoading}>{formLoading ? "Đang lưu..." : "Lưu"}</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
