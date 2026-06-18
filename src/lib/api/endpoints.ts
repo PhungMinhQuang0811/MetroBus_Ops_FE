@@ -59,5 +59,15 @@ export const API_ENDPOINTS = {
     listBatches: "/batch/list-batches",
     createBatch: "/batch/create-batch",
   },
+  controlPackage: {
+    createPackage: "/control-package/create",
+    updatePackage: (packageId: number) => `/control-package/update/${packageId}`,
+    getPackageDetail: "/control-package/get-detail",
+    listPackages: "/control-package/list",
+    publishPackage: (packageId: number) => `/control-package/publish/${packageId}`,
+    pullPending: "/control-package/pull-pending",
+    ackApply: (syncId: number) => `/control-package/ack-apply/${syncId}`,
+    searchSyncs: "/control-package/search-syncs",
+    getSyncDetail: "/control-package/get-sync-detail",
+  },
 } as const
-

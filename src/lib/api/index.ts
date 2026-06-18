@@ -9,6 +9,7 @@ export { deviceApi } from "./services/device"
 export { incidentApi } from "./services/incident"
 export { transactionApi } from "./services/transaction"
 export { batchApi } from "./services/batch"
+export { controlPackageApi } from "./services/control-package"
 export type { ApiResponse, ListResult } from "./dto/common"
 export type {
   Account,
@@ -101,9 +102,32 @@ export type {
   ListBatchesQuery,
 } from "./dto/batch"
 export type {
+  AckControlPackageApplyRequest,
+  AckControlPackageApplyResponse,
+  ControlPackage,
+  ControlPackageDetail,
+  ControlPackageListResponse,
+  ControlPackagePayload,
+  ControlPackageSourceType,
+  ControlPackageStatus,
+  ControlPackageType,
+  ControlSync,
+  ControlSyncDetail,
+  ControlSyncListResponse,
+  ControlSyncStatus,
+  CreateControlPackageRequest,
+  ListControlPackagesQuery,
+  PendingControlPackage,
+  PublishControlPackageRequest,
+  PublishControlPackageResponse,
+  PublishedStationSync,
+  PullPendingControlPackagesQuery,
+  SearchControlSyncsQuery,
+  UpdateControlPackageRequest,
+} from "./dto/control-package"
+export type {
   Incident,
   IncidentDetail,
   IncidentListResponse,
   SearchIncidentsQuery,
 } from "./dto/incident"
-
