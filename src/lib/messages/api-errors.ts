@@ -64,6 +64,8 @@ export const OPS_ERROR_MESSAGES: Record<number, string> = {
   2027: "Mã trạng thái đồng bộ không hợp lệ",
   2028: "Trạng thái áp dụng không hợp lệ",
   2029: "Version cấu hình không hợp lệ",
+  2030: "Thời gian bắt đầu dashboard phải trước hoặc bằng thời gian kết thúc",
+  2031: "Bucket dashboard không hợp lệ",
 
   3000: "Mã tuyến đã tồn tại trong operator",
   3001: "Tuyến đang hoạt động",
@@ -83,6 +85,7 @@ export const OPS_ERROR_MESSAGES: Record<number, string> = {
   3030: "Gói cấu hình không thể phát hành lại",
   3031: "Không tìm thấy trạng thái đồng bộ cấu hình",
   3032: "Không tìm thấy payload của gói cấu hình",
+  3033: "Khoảng thời gian dashboard quá rộng. Vui lòng thu hẹp bộ lọc",
 
   4000: "Đã có lỗi hệ thống xảy ra",
   4002: "Bạn cần đăng nhập để tiếp tục",
@@ -174,6 +177,9 @@ const BACKEND_ERROR_MESSAGE_TRANSLATIONS: Record<string, string> = {
   "Invalid control sync id": "Mã trạng thái đồng bộ không hợp lệ",
   "Invalid control sync status": "Trạng thái áp dụng không hợp lệ",
   "Invalid control package version": "Version cấu hình không hợp lệ",
+  "Dashboard from time must be before or equal to to time": "Thời gian bắt đầu dashboard phải trước hoặc bằng thời gian kết thúc",
+  "Invalid dashboard bucket": "Bucket dashboard không hợp lệ",
+  "Dashboard query range is too wide": "Khoảng thời gian dashboard quá rộng. Vui lòng thu hẹp bộ lọc",
   "Control package not found": "Không tìm thấy gói cấu hình",
   "Control package is not editable": "Gói cấu hình không còn có thể chỉnh sửa",
   "Control package already published": "Gói cấu hình không thể phát hành lại",

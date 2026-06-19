@@ -8,6 +8,7 @@ export { stationApi } from "./services/station"
 export { deviceApi } from "./services/device"
 export { incidentApi } from "./services/incident"
 export { transactionApi } from "./services/transaction"
+export { dashboardApi } from "./services/dashboard"
 export { batchApi } from "./services/batch"
 export { controlPackageApi } from "./services/control-package"
 export type { ApiResponse, ListResult } from "./dto/common"
@@ -94,6 +95,28 @@ export type {
   TransactionReason,
   TransactionSyncStatus,
 } from "./dto/transaction"
+export type {
+  DashboardAlertItem,
+  DashboardAlertResponse,
+  DashboardAlertsQuery,
+  DashboardBatchSummary,
+  DashboardBucket,
+  DashboardControlSyncSummary,
+  DashboardDeviceSummary,
+  DashboardFilterQuery,
+  DashboardIncidentSummary,
+  DashboardRecentIncidentItem,
+  DashboardRecentIncidentResponse,
+  DashboardRecentIncidentsQuery,
+  DashboardRouteStationSummaryItem,
+  DashboardRouteStationSummaryResponse,
+  DashboardSeverity,
+  DashboardSummaryResponse,
+  DashboardTimelineQuery,
+  DashboardTransactionSummary,
+  DashboardTransactionTimelineItem,
+  DashboardTransactionTimelineResponse,
+} from "./dto/dashboard"
 export type {
   Batch,
   BatchListResponse,

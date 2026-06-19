@@ -32,7 +32,6 @@ export const managerNavItems: PortalNavItem[] = [
     ],
   },
   { label: "Giao dịch", href: ROUTES.manager.transactions },
-  { label: "Dữ liệu vé", href: ROUTES.manager.ticketData },
   {
     label: "Cấu hình vận hành",
     href: ROUTES.manager.controlPackages,

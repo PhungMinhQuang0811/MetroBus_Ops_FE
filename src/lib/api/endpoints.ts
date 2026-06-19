@@ -55,6 +55,13 @@ export const API_ENDPOINTS = {
     searchTransactions: "/transaction/search-transactions",
     getTransactionDetail: "/transaction/get-transaction-detail",
   },
+  dashboard: {
+    summary: "/dashboard/summary",
+    transactionTimeline: "/dashboard/transaction-timeline",
+    routeStationSummaries: "/dashboard/route-station-summaries",
+    recentIncidents: "/dashboard/recent-incidents",
+    alerts: "/dashboard/alerts",
+  },
   batch: {
     listBatches: "/batch/list-batches",
     createBatch: "/batch/create-batch",
