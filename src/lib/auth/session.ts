@@ -21,7 +21,7 @@ export function getPrimaryAuthRole(roles: string[] = []): AuthRole | undefined {
 }
 
 export function getHomeRouteForRole(role?: string) {
-  if (role === AUTH_ROLES.STATION_OPERATOR) return ROUTES.station.home
+  if (role === AUTH_ROLES.STATION_OPERATOR) return ROUTES.station.deviceMonitoring
   if (role === AUTH_ROLES.OPERATOR_ADMIN) return ROUTES.admin.home
   if (role === AUTH_ROLES.OPERATOR_MANAGER) return ROUTES.manager.home
 

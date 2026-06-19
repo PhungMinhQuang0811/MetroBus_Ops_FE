@@ -5,6 +5,12 @@ export const API_ENDPOINTS = {
     logout: "/auth/logout",
     refreshToken: "/auth/refresh-token",
   },
+  audit: {
+    searchAuthAuditLogs: "/auth/search-audit-logs",
+    getAuthAuditLog: (auditId: string) => `/auth/get-audit-log/${auditId}`,
+    searchAfcAuditLogs: "/audit/search-audit-logs",
+    getAfcAuditLog: (auditId: string) => `/audit/get-audit-log/${auditId}`,
+  },
   account: {
     listAccounts: "/account/list-accounts",
     createAccount: "/account/create-account",

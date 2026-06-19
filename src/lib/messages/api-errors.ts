@@ -12,6 +12,7 @@ export const AUTH_ERROR_MESSAGES: Record<number, string> = {
   2006: "Mật khẩu xác nhận không khớp",
   2007: "Mật khẩu hiện tại không chính xác",
   2008: "Tài khoản này chưa gửi yêu cầu đặt lại mật khẩu",
+  2010: "Thời gian bắt đầu audit phải trước hoặc bằng thời gian kết thúc",
 
   3000: "Thông tin đăng nhập không chính xác. Vui lòng thử lại.",
   3002: "Username đã tồn tại",
@@ -66,6 +67,7 @@ export const OPS_ERROR_MESSAGES: Record<number, string> = {
   2029: "Version cấu hình không hợp lệ",
   2030: "Thời gian bắt đầu dashboard phải trước hoặc bằng thời gian kết thúc",
   2031: "Bucket dashboard không hợp lệ",
+  2032: "Thời gian bắt đầu audit phải trước hoặc bằng thời gian kết thúc",
 
   3000: "Mã tuyến đã tồn tại trong operator",
   3001: "Tuyến đang hoạt động",
@@ -180,6 +182,8 @@ const BACKEND_ERROR_MESSAGE_TRANSLATIONS: Record<string, string> = {
   "Dashboard from time must be before or equal to to time": "Thời gian bắt đầu dashboard phải trước hoặc bằng thời gian kết thúc",
   "Invalid dashboard bucket": "Bucket dashboard không hợp lệ",
   "Dashboard query range is too wide": "Khoảng thời gian dashboard quá rộng. Vui lòng thu hẹp bộ lọc",
+  "Audit from time must be before or equal to to time": "Thời gian bắt đầu audit phải trước hoặc bằng thời gian kết thúc",
+  "Audit query range is too wide": "Khoảng thời gian audit quá rộng. Vui lòng thu hẹp bộ lọc",
   "Control package not found": "Không tìm thấy gói cấu hình",
   "Control package is not editable": "Gói cấu hình không còn có thể chỉnh sửa",
   "Control package already published": "Gói cấu hình không thể phát hành lại",
