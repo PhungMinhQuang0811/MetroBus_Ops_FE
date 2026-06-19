@@ -130,3 +130,5 @@
  GET /bff/dashboard/route-station-summaries?from=2026-06-18T10%3A01%3A00.000Z&to=2026-06-19T10%3A01%3A00.000Z 200 in 316ms (next.js: 7ms, application-code: 310ms)
  GET /bff/dashboard/alerts?from=2026-06-18T10%3A01%3A00.000Z&to=2026-06-19T10%3A01%3A00.000Z&limit=6 200 in 530ms (next.js: 8ms, application-code: 523ms)
  GET /manager 200 in 312ms (next.js: 175ms, proxy.ts: 15ms, application-code: 122ms)
+ GET /manager 200 in 96ms (next.js: 10ms, proxy.ts: 20ms, application-code: 67ms)
+ POST /bff/auth/refresh-token 200 in 313ms (next.js: 44ms, application-code: 268ms)
