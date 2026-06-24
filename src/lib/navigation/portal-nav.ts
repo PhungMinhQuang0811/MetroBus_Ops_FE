@@ -41,6 +41,7 @@ export const managerNavItems: PortalNavItem[] = [
     ],
   },
   { label: "Quản lý lô dữ liệu", href: ROUTES.manager.dataBatches },
+  { label: "Đối soát doanh thu", href: ROUTES.manager.reconciliation },
 ]
 
 export const stationNavItems: PortalNavItem[] = [

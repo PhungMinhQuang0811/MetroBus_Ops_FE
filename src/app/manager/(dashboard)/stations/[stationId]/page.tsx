@@ -89,11 +89,12 @@ function getRouteLabel(route: TransitRoute) {
   return `${route.routeCode} - ${route.routeName}`
 }
 
-function normalizeStationForm(routeId: string, stationName: string, stationOrder: string): StationMutationRequest {
+function normalizeStationForm(routeId: string, stationName: string, stationOrder: string, distance: string): StationMutationRequest {
   return {
     routeId: Number(routeId),
     stationName: stationName.trim(),
     stationOrder: Number(stationOrder),
+    distance: distance.trim() ? Number(distance) : 0,
   }
 }
 
@@ -111,6 +112,7 @@ export default function StationDetailPage() {
   const [formRouteId, setFormRouteId] = useState("")
   const [stationName, setStationName] = useState("")
   const [stationOrder, setStationOrder] = useState("")
+  const [distance, setDistance] = useState("0.00")
   const [formLoading, setFormLoading] = useState(false)
   const [formError, setFormError] = useState("")
 
@@ -154,6 +156,7 @@ export default function StationDetailPage() {
     setFormRouteId(String(stationDetail.routeId))
     setStationName(stationDetail.stationName)
     setStationOrder(String(stationDetail.stationOrder))
+    setDistance(String(stationDetail.distance ?? 0))
     setFormError("")
     setFormOpen(true)
   }
@@ -162,7 +165,7 @@ export default function StationDetailPage() {
     event.preventDefault()
     if (!stationDetail) return
 
-    const payload = normalizeStationForm(formRouteId, stationName, stationOrder)
+    const payload = normalizeStationForm(formRouteId, stationName, stationOrder, distance)
     if (!Number.isInteger(payload.routeId) || payload.routeId < 1) {
       setFormError("Vui lòng chọn tuyến.")
       return
@@ -221,6 +224,7 @@ export default function StationDetailPage() {
             <div><span className="text-muted-foreground">Mã ga/trạm</span><div className="font-medium">{stationDetail.stationCode}</div></div>
             <div><span className="text-muted-foreground">Tên ga/trạm</span><div className="font-medium">{stationDetail.stationName}</div></div>
             <div><span className="text-muted-foreground">Thứ tự</span><div className="font-medium">{stationDetail.stationOrder}</div></div>
+            <div><span className="text-muted-foreground">Cự ly (km)</span><div className="font-medium">{stationDetail.distance ?? "0.00"}</div></div>
             <div><span className="text-muted-foreground">Trạng thái</span><div className="pt-1"><StatusBadge status={stationDetail.status} /></div></div>
             <div><span className="text-muted-foreground">Ngày tạo</span><div className="font-medium">{formatDateTime(stationDetail.createdAt)}</div></div>
             <div><span className="text-muted-foreground">Cập nhật</span><div className="font-medium">{formatDateTime(stationDetail.updatedAt)}</div></div>
@@ -275,7 +279,7 @@ export default function StationDetailPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Cập nhật ga/trạm</DialogTitle>
-            <DialogDescription>Chỉ cập nhật tuyến, tên ga/trạm và thứ tự.</DialogDescription>
+            <DialogDescription>Chỉ cập nhật tuyến, tên ga/trạm, thứ tự và cự ly.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmitStation} className="space-y-4">
             {formError && <Alert variant="destructive"><AlertDescription>{formError}</AlertDescription></Alert>}
@@ -299,6 +303,10 @@ export default function StationDetailPage() {
             <div className="space-y-2">
               <Label htmlFor="stationOrder">Thứ tự trong tuyến</Label>
               <Input id="stationOrder" type="number" min={1} step={1} value={stationOrder} onChange={(event) => setStationOrder(event.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="distance">Cự ly (km)</Label>
+              <Input id="distance" type="number" min={0} step={0.01} value={distance} onChange={(event) => setDistance(event.target.value)} />
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" disabled={formLoading} onClick={() => setFormOpen(false)}>Hủy</Button>

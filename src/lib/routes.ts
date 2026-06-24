@@ -28,6 +28,7 @@ export const ROUTES = {
     controlPackages: "/manager/control-packages",
     controlSyncs: "/manager/control-syncs",
     dataBatches: "/manager/data-batches",
+    reconciliation: "/manager/reconciliation",
   },
 
   operator: {

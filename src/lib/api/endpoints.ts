@@ -83,4 +83,7 @@ export const API_ENDPOINTS = {
     searchSyncs: "/control-package/search-syncs",
     getSyncDetail: "/control-package/get-sync-detail",
   },
+  reconciliation: {
+    settlements: "/reconciliation/settlements",
+  },
 } as const

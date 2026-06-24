@@ -82,11 +82,12 @@ function StatusBadge({ status }: { status: MasterDataStatus }) {
   )
 }
 
-function normalizeStationForm(routeId: string, stationName: string, stationOrder: string): StationMutationRequest {
+function normalizeStationForm(routeId: string, stationName: string, stationOrder: string, distance: string): StationMutationRequest {
   return {
     routeId: Number(routeId),
     stationName: stationName.trim(),
     stationOrder: Number(stationOrder),
+    distance: distance.trim() ? Number(distance) : 0,
   }
 }
 
@@ -118,6 +119,7 @@ export default function StationsPage() {
   const [formRouteId, setFormRouteId] = useState("")
   const [stationName, setStationName] = useState("")
   const [stationOrder, setStationOrder] = useState("")
+  const [distance, setDistance] = useState("0.00")
   const [formLoading, setFormLoading] = useState(false)
   const [formError, setFormError] = useState("")
 
@@ -188,12 +190,14 @@ export default function StationsPage() {
     setFormRouteId("")
     setStationName("")
     setStationOrder("")
+    setDistance("0.00")
     setFormError("")
   }
 
   const openCreateStation = () => {
     resetStationForm()
     setFormRouteId(routeId === "all" ? String(routeOptions[0]?.id ?? "") : routeId)
+    setDistance("0.00")
     setFormOpen(true)
   }
 
@@ -202,6 +206,7 @@ export default function StationsPage() {
     setFormRouteId(String(station.routeId))
     setStationName(station.stationName)
     setStationOrder(String(station.stationOrder))
+    setDistance(String(station.distance ?? 0))
     setFormError("")
     setFormOpen(true)
   }
@@ -209,7 +214,7 @@ export default function StationsPage() {
   const handleSubmitStation = async (event: FormEvent) => {
     event.preventDefault()
 
-    const payload = normalizeStationForm(formRouteId, stationName, stationOrder)
+    const payload = normalizeStationForm(formRouteId, stationName, stationOrder, distance)
     if (!Number.isInteger(payload.routeId) || payload.routeId < 1) {
       setFormError("Vui lòng chọn tuyến.")
       return
@@ -455,6 +460,7 @@ export default function StationsPage() {
               <TableHead>Tên ga/trạm</TableHead>
               <TableHead>Mã tuyến</TableHead>
               <TableHead>Thứ tự</TableHead>
+              <TableHead>Cự ly (km)</TableHead>
               <TableHead>Trạng thái</TableHead>
               <TableHead>Cập nhật</TableHead>
               <TableHead className="text-right">Thao tác</TableHead>
@@ -463,12 +469,12 @@ export default function StationsPage() {
           <TableBody>
             {loading && (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">Đang tải ga/trạm...</TableCell>
+                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">Đang tải ga/trạm...</TableCell>
               </TableRow>
             )}
             {!loading && stations.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">Không có ga/trạm phù hợp.</TableCell>
+                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">Không có ga/trạm phù hợp.</TableCell>
               </TableRow>
             )}
             {!loading && stations.map((station) => (
@@ -477,6 +483,7 @@ export default function StationsPage() {
                 <TableCell>{station.stationName}</TableCell>
                 <TableCell>{station.routeCode}</TableCell>
                 <TableCell>{station.stationOrder}</TableCell>
+                <TableCell>{station.distance ?? "0.00"}</TableCell>
                 <TableCell><StatusBadge status={station.status} /></TableCell>
                 <TableCell>{formatDateTime(station.updatedAt ?? station.createdAt)}</TableCell>
                 <TableCell>
@@ -565,6 +572,10 @@ export default function StationsPage() {
               <Label htmlFor="stationOrder">Thứ tự trong tuyến</Label>
               <Input id="stationOrder" type="number" min={1} step={1} value={stationOrder} onChange={(event) => setStationOrder(event.target.value)} placeholder="1" />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="distance">Cự ly (km)</Label>
+              <Input id="distance" type="number" min={0} step={0.01} value={distance} onChange={(event) => setDistance(event.target.value)} placeholder="0.00" />
+            </div>
             <DialogFooter>
               <Button type="button" variant="outline" disabled={formLoading} onClick={() => setFormOpen(false)}>Hủy</Button>
               <Button type="submit" disabled={formLoading}>{formLoading ? "Đang lưu..." : "Lưu"}</Button>
@@ -624,6 +635,7 @@ export default function StationsPage() {
                       <TableHead>Mã tuyến</TableHead>
                       <TableHead>Tên ga/trạm</TableHead>
                       <TableHead>Thứ tự</TableHead>
+                      <TableHead>Cự ly (km)</TableHead>
                       <TableHead>Kết quả</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -634,6 +646,7 @@ export default function StationsPage() {
                         <TableCell>{item.routeCode ?? "--"}</TableCell>
                         <TableCell>{item.stationName ?? "--"}</TableCell>
                         <TableCell>{item.stationOrder ?? "--"}</TableCell>
+                        <TableCell>{item.distance ?? "0.00"}</TableCell>
                         <TableCell>{item.valid ? "Hợp lệ" : item.errors.map((error) => getApiErrorMessageFromBackendMessage(error.message)).join(", ")}</TableCell>
                       </TableRow>
                     ))}

@@ -12,4 +12,5 @@ export interface StationMutationRequest {
   routeId: number
   stationName: string
   stationOrder: number
+  distance?: number
 }

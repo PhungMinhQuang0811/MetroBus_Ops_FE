@@ -12,6 +12,7 @@ export { dashboardApi } from "./services/dashboard"
 export { auditApi } from "./services/audit"
 export { batchApi } from "./services/batch"
 export { controlPackageApi } from "./services/control-package"
+export { settlementApi } from "./services/reconciliation"
 export type { ApiResponse, ListResult } from "./dto/common"
 export type {
   Account,
@@ -162,3 +163,7 @@ export type {
   IncidentListResponse,
   SearchIncidentsQuery,
 } from "./dto/incident"
+export type {
+  Settlement,
+  SettlementListResponse,
+} from "./dto/reconciliation"

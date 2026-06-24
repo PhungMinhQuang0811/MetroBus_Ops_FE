@@ -7,6 +7,7 @@ export interface Station {
   stationCode: string
   stationName: string
   stationOrder: number
+  distance?: number
   status: MasterDataStatus
   createdAt?: string
   updatedAt?: string
@@ -56,6 +57,7 @@ export interface StationImportPreviewItem {
   routeCode: string | null
   stationName: string | null
   stationOrder: number | null
+  distance?: number | null
   valid: boolean
   errors: StationImportError[]
 }
