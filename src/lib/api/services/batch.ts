@@ -7,4 +7,6 @@ export const batchApi = {
     apiRequest<BatchListResponse>(API_ENDPOINTS.batch.listBatches, { service: "ops", method: "GET", query }),
   createBatch: (body: CreateBatchRequest) =>
     apiRequest<Batch>(API_ENDPOINTS.batch.createBatch, { service: "ops", method: "POST", body }),
+  submitBatchToLevel5: (batchId: string) =>
+    apiRequest<Batch>(API_ENDPOINTS.batch.submitBatchToLevel5(batchId), { service: "ops", method: "POST" }),
 }

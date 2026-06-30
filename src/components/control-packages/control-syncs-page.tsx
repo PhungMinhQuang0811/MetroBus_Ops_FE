@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Eye } from "lucide-react"
+import { Eye, RefreshCw } from "lucide-react"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
@@ -263,7 +263,16 @@ export function ControlSyncsPage({ scopeLabel }: ControlSyncsPageProps) {
                 <TableCell>{formatDateTime(sync.lastAttemptAt)}</TableCell>
                 <TableCell>{formatDateTime(sync.appliedAt)}</TableCell>
                 <TableCell>
-                  <div className="flex justify-end">
+                  <div className="flex justify-end gap-1">
+                    <Button variant="ghost" size="icon" aria-label={`Đồng bộ ngay ${sync.stationCode}`} onClick={async () => {
+                      try {
+                        await controlPackageApi.triggerDeviceSync(sync.stationCode)
+                      } catch {
+                        // handled by API error display
+                      }
+                    }}>
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
                     <Button variant="ghost" size="icon" aria-label={`Xem sync ${sync.syncId}`} onClick={() => void openDetail(sync)}>
                       <Eye className="h-4 w-4" />
                     </Button>

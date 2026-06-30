@@ -71,6 +71,7 @@ export const API_ENDPOINTS = {
   batch: {
     listBatches: "/batch/list-batches",
     createBatch: "/batch/create-batch",
+    submitBatchToLevel5: (batchId: string) => `/batch/submit-batch-to-level5/${batchId}`,
   },
   controlPackage: {
     createPackage: "/control-package/create",
@@ -82,6 +83,7 @@ export const API_ENDPOINTS = {
     ackApply: (syncId: number) => `/control-package/ack-apply/${syncId}`,
     searchSyncs: "/control-package/search-syncs",
     getSyncDetail: "/control-package/get-sync-detail",
+    triggerDeviceSync: "/control-package/trigger-device-sync",
   },
   reconciliation: {
     settlements: "/reconciliation/settlements",

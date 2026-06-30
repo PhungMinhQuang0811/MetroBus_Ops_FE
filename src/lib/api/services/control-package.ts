@@ -53,4 +53,10 @@ export const controlPackageApi = {
       method: "GET",
       query: { syncId },
     }),
+  triggerDeviceSync: (stationCode: string) =>
+    apiRequest<Record<string, unknown>>(API_ENDPOINTS.controlPackage.triggerDeviceSync, {
+      service: "ops",
+      method: "POST",
+      query: { stationCode },
+    }),
 }

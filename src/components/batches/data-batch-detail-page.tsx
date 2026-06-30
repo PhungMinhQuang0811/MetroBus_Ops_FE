@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Send } from "lucide-react"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
@@ -58,6 +58,9 @@ export function DataBatchDetailPage({ backHref }: DataBatchDetailPageProps) {
   const [batch, setBatch] = useState<Batch | null>(null)
   const [loading, setLoading] = useState(true)
   const [pageError, setPageError] = useState("")
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState("")
+  const [submitSuccess, setSubmitSuccess] = useState(false)
 
   useEffect(() => {
     const loadBatch = async () => {
@@ -101,7 +104,32 @@ export function DataBatchDetailPage({ backHref }: DataBatchDetailPageProps) {
             <h1 className="text-2xl font-semibold text-foreground">Chi tiết lô {batch?.batchCode ?? ""}</h1>
             <p className="text-sm text-muted-foreground">Thông tin lô dữ liệu đối soát đã gom từ giao dịch PENDING.</p>
           </div>
-          {batch && <Badge variant="outline">{STATUS_LABELS[batch.status]}</Badge>}
+          <div className="flex items-center gap-2">
+            {batch && <Badge variant="outline">{STATUS_LABELS[batch.status]}</Badge>}
+            {batch && batch.status === "CREATED" && (
+              <Button
+                variant="outline"
+                disabled={submitting}
+                onClick={async () => {
+                  setSubmitting(true)
+                  setSubmitError("")
+                  setSubmitSuccess(false)
+                  try {
+                    await batchApi.submitBatchToLevel5(batchId!)
+                    setSubmitSuccess(true)
+                    setBatch(prev => prev ? { ...prev, status: "SUBMITTED" } : prev)
+                  } catch (error) {
+                    setSubmitError(getApiErrorMessage(error))
+                  } finally {
+                    setSubmitting(false)
+                  }
+                }}
+              >
+                <Send className="mr-2 h-4 w-4" />
+                {submitting ? "Đang gửi..." : "Gửi lên C5"}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -124,6 +152,8 @@ export function DataBatchDetailPage({ backHref }: DataBatchDetailPageProps) {
             </div>
           </div>
 
+          {submitError && <Alert variant="destructive"><AlertDescription>{submitError}</AlertDescription></Alert>}
+          {submitSuccess && <Alert><AlertDescription>Đã gửi lô dữ liệu lên Cấp 5 thành công.</AlertDescription></Alert>}
           <div className="rounded-md border bg-card p-4">
             <div className="mb-1 text-sm font-medium">Giao dịch trong lô / Kết quả đồng bộ</div>
             <p className="text-sm text-muted-foreground">
