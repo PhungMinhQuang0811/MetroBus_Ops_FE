@@ -42,6 +42,7 @@ export const managerNavItems: PortalNavItem[] = [
   },
   { label: "Quản lý lô dữ liệu", href: ROUTES.manager.dataBatches },
   { label: "Đối soát doanh thu", href: ROUTES.manager.reconciliation },
+  { label: "Ca trực", href: ROUTES.manager.shifts },
 ]
 
 export const stationNavItems: PortalNavItem[] = [
@@ -54,6 +55,13 @@ export const stationNavItems: PortalNavItem[] = [
     ],
   },
   { label: "Giao dịch", href: ROUTES.station.transactions },
+  {
+    label: "Ca trực",
+    href: ROUTES.station.shifts,
+    children: [
+      { label: "Nhận ca / Kết ca", href: ROUTES.station.shifts },
+    ],
+  },
   {
     label: "Cấu hình vận hành",
     href: ROUTES.station.controlSyncs,

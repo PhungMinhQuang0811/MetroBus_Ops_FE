@@ -29,6 +29,7 @@ export const ROUTES = {
     controlSyncs: "/manager/control-syncs",
     dataBatches: "/manager/data-batches",
     reconciliation: "/manager/reconciliation",
+    shifts: "/manager/shifts",
   },
 
   operator: {
@@ -41,6 +42,7 @@ export const ROUTES = {
     deviceIncidents: "/station/devices/incidents",
     transactions: "/station/transactions",
     controlSyncs: "/station/control-syncs",
+    shifts: "/station/shifts",
   },
 } as const satisfies Record<string, unknown>
 

@@ -88,4 +88,10 @@ export const API_ENDPOINTS = {
   reconciliation: {
     settlements: "/reconciliation/settlements",
   },
+  shift: {
+    checkIn: "/shifts/check-in",
+    checkOut: "/shifts/check-out",
+    listShifts: "/shifts/list",
+    listAllShifts: "/shifts/list-all",
+  },
 } as const
