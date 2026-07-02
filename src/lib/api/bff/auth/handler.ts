@@ -32,6 +32,7 @@ function rewriteSetCookieHeader(header: string) {
     // Backend scopes cookies to /vdt. After this BFF, cookies are stored on
     // localhost:3000 and must cover protected app routes such as /admin, /manager, and /station.
     if (name === "path") return
+    if (name === "domain") return
     if (name === "samesite") hasSameSite = true
 
     rewrittenAttributes.push(attribute)
