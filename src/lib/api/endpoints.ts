@@ -10,6 +10,7 @@ export const API_ENDPOINTS = {
     getAuthAuditLog: (auditId: string) => `/auth/get-audit-log/${auditId}`,
     searchAfcAuditLogs: "/audit/search-audit-logs",
     getAfcAuditLog: (auditId: string) => `/audit/get-audit-log/${auditId}`,
+    searchIntegrationLogs: "/audit/search-integration-logs",
   },
   account: {
     listAccounts: "/account/list-accounts",

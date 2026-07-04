@@ -30,3 +30,24 @@ export interface AuditLogListResponse {
   totalElements: number
   totalPages: number
 }
+
+export interface IntegrationExchangeLog {
+  id: string
+  timestamp: string
+  systemName?: string | null
+  direction?: string | null
+  endpoint?: string | null
+  status?: string | null
+  requestPayload?: unknown
+  responsePayload?: unknown
+  errorMessage?: string | null
+}
+
+export interface IntegrationExchangeLogListResponse {
+  items: IntegrationExchangeLog[]
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
+}
+

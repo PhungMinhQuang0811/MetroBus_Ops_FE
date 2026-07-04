@@ -18,3 +18,9 @@ export interface AfcAuditSearchQuery extends AuditPageQuery {
   resourceType?: string
   resourceId?: string
 }
+
+export interface IntegrationAuditSearchQuery extends AuditPageQuery {
+  systemName?: string
+  direction?: string
+  status?: string
+}

@@ -1,6 +1,6 @@
 import { apiRequest } from "../client"
 import { API_ENDPOINTS } from "../endpoints"
-import type { AfcAuditSearchQuery, AuditLog, AuditLogListResponse, AuthAuditSearchQuery } from "../dto/audit"
+import type { AfcAuditSearchQuery, AuditLog, AuditLogListResponse, AuthAuditSearchQuery, IntegrationAuditSearchQuery, IntegrationExchangeLogListResponse } from "../dto/audit"
 
 export const auditApi = {
   searchAuthAuditLogs: (query: AuthAuditSearchQuery) =>
@@ -24,5 +24,11 @@ export const auditApi = {
     apiRequest<AuditLog>(API_ENDPOINTS.audit.getAfcAuditLog(auditId), {
       service: "ops",
       method: "GET",
+    }),
+  searchIntegrationLogs: (query: IntegrationAuditSearchQuery) =>
+    apiRequest<IntegrationExchangeLogListResponse>(API_ENDPOINTS.audit.searchIntegrationLogs, {
+      service: "ops",
+      method: "GET",
+      query,
     }),
 }

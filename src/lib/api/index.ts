@@ -104,6 +104,9 @@ export type {
   AuditLogListResponse,
   AuditPageQuery,
   AuthAuditSearchQuery,
+  IntegrationAuditSearchQuery,
+  IntegrationExchangeLog,
+  IntegrationExchangeLogListResponse,
 } from "./dto/audit"
 export type {
   DashboardAlertItem,

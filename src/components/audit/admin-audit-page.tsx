@@ -32,14 +32,14 @@ import {
 } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 import { auditApi } from "@/lib/api"
-import type { AfcAuditSearchQuery, AuditLog, AuthAuditSearchQuery } from "@/lib/api"
+import type { AfcAuditSearchQuery, AuditLog, AuthAuditSearchQuery, IntegrationAuditSearchQuery, IntegrationExchangeLog } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/messages"
 import { cn } from "@/lib/utils"
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const
 const TABLE_CLASS_NAME = "border-collapse [&_td]:border [&_th]:border [&_thead_tr]:bg-muted/40"
 
-type AuditTab = "auth" | "afc"
+type AuditTab = "auth" | "afc" | "integration"
 
 function toApiDateTime(value: string) {
   if (!value) return undefined
@@ -255,6 +255,17 @@ export function AdminAuditPage() {
   const [afcTotalElements, setAfcTotalElements] = useState(0)
   const [afcTotalPages, setAfcTotalPages] = useState(0)
 
+  const [integrationFrom, setIntegrationFrom] = useState("")
+  const [integrationTo, setIntegrationTo] = useState("")
+  const [integrationSystemName, setIntegrationSystemName] = useState("")
+  const [integrationDirection, setIntegrationDirection] = useState("")
+  const [integrationStatus, setIntegrationStatus] = useState("all")
+  const [integrationLogs, setIntegrationLogs] = useState<IntegrationExchangeLog[]>([])
+  const [integrationPage, setIntegrationPage] = useState(0)
+  const [integrationPageSize, setIntegrationPageSize] = useState(20)
+  const [integrationTotalElements, setIntegrationTotalElements] = useState(0)
+  const [integrationTotalPages, setIntegrationTotalPages] = useState(0)
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [filterError, setFilterError] = useState("")
@@ -289,6 +300,16 @@ export function AdminAuditPage() {
     action: afcAction.trim() || undefined,
     resourceType: afcResourceType.trim() || undefined,
     resourceId: afcResourceId.trim() || undefined,
+    page,
+    size,
+  })
+
+  const buildIntegrationQuery = (page: number, size: number): IntegrationAuditSearchQuery => ({
+    from: toApiDateTime(integrationFrom),
+    to: toApiDateTime(integrationTo),
+    systemName: integrationSystemName.trim() || undefined,
+    direction: integrationDirection.trim() || undefined,
+    status: integrationStatus === "all" ? undefined : integrationStatus,
     page,
     size,
   })
@@ -335,6 +356,27 @@ export function AdminAuditPage() {
     }
   }
 
+  const loadIntegrationLogs = async (page = integrationPage, size = integrationPageSize) => {
+    if (!validateRange(integrationFrom, integrationTo)) return
+
+    setLoading(true)
+    setError("")
+
+    try {
+      const response = await auditApi.searchIntegrationLogs(buildIntegrationQuery(page, size))
+      setIntegrationLogs(response.result.items)
+      setIntegrationPage(response.result.page)
+      setIntegrationPageSize(response.result.size)
+      setIntegrationTotalElements(response.result.totalElements)
+      setIntegrationTotalPages(response.result.totalPages)
+    } catch (loadError) {
+      setError(getApiErrorMessage(loadError))
+      setIntegrationLogs([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const openDetail = async (tab: AuditTab, auditId: string) => {
     setDetailTab(tab)
     setDetailLog(null)
@@ -363,6 +405,7 @@ export function AdminAuditPage() {
     setError("")
 
     if (nextTab === "afc" && afcLogs.length === 0 && afcTotalElements === 0) void loadAfcLogs(0)
+    if (nextTab === "integration" && integrationLogs.length === 0 && integrationTotalElements === 0) void loadIntegrationLogs(0)
   }
 
   const resetAuthFilters = () => {
@@ -386,6 +429,16 @@ export function AdminAuditPage() {
     setTimeout(() => void loadAfcLogs(0), 0)
   }
 
+  const resetIntegrationFilters = () => {
+    setIntegrationFrom("")
+    setIntegrationTo("")
+    setIntegrationSystemName("")
+    setIntegrationDirection("")
+    setIntegrationStatus("all")
+    setFilterError("")
+    setTimeout(() => void loadIntegrationLogs(0), 0)
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -397,7 +450,11 @@ export function AdminAuditPage() {
         </div>
         <Button
           variant="outline"
-          onClick={() => activeTab === "auth" ? void loadAuthLogs() : void loadAfcLogs()}
+          onClick={() => {
+            if (activeTab === "auth") void loadAuthLogs()
+            else if (activeTab === "afc") void loadAfcLogs()
+            else void loadIntegrationLogs()
+          }}
           disabled={loading}
           className="gap-2"
         >
@@ -413,6 +470,7 @@ export function AdminAuditPage() {
         <TabsList>
           <TabsTrigger value="auth">Đăng nhập & tài khoản</TabsTrigger>
           <TabsTrigger value="afc">Thao tác vận hành</TabsTrigger>
+          <TabsTrigger value="integration">Tích hợp & truyền nhận</TabsTrigger>
         </TabsList>
 
         <TabsContent value="auth" className="space-y-4">
@@ -551,6 +609,72 @@ export function AdminAuditPage() {
               loading={loading}
               onPageChange={(nextPage) => void loadAfcLogs(nextPage)}
               onPageSizeChange={(nextSize) => void loadAfcLogs(0, nextSize)}
+            />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="integration" className="space-y-4">
+          <div className="rounded-md border bg-card p-3">
+            <div className="grid gap-3 lg:grid-cols-5">
+              <Input type="datetime-local" value={integrationFrom} onChange={(event) => setIntegrationFrom(event.target.value)} aria-label="Từ ngày giờ" />
+              <Input type="datetime-local" value={integrationTo} onChange={(event) => setIntegrationTo(event.target.value)} aria-label="Đến ngày giờ" />
+              <Input value={integrationSystemName} onChange={(event) => setIntegrationSystemName(event.target.value)} placeholder="System Name (VD: Level2, Level5)" />
+              <Select value={integrationDirection} onValueChange={setIntegrationDirection}>
+                <SelectTrigger><SelectValue placeholder="Chiều tích hợp" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả</SelectItem>
+                  <SelectItem value="INBOUND">INBOUND</SelectItem>
+                  <SelectItem value="OUTBOUND">OUTBOUND</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={integrationStatus} onValueChange={setIntegrationStatus}>
+                <SelectTrigger><SelectValue placeholder="Trạng thái" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả</SelectItem>
+                  <SelectItem value="SUCCESS">SUCCESS</SelectItem>
+                  <SelectItem value="FAILED">FAILED</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="mt-3 flex flex-wrap justify-end gap-2">
+              <Button variant="outline" onClick={resetIntegrationFilters} disabled={loading}>Đặt lại</Button>
+              <Button onClick={() => void loadIntegrationLogs(0)} disabled={loading}>Lọc</Button>
+            </div>
+          </div>
+
+          <div className="rounded-md border">
+            <Table className={TABLE_CLASS_NAME}>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Time</TableHead>
+                  <TableHead>System</TableHead>
+                  <TableHead>Direction</TableHead>
+                  <TableHead>Endpoint</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading && activeTab === "integration" && <TableRow><TableCell colSpan={5} className="h-24 text-center text-muted-foreground">Đang tải audit...</TableCell></TableRow>}
+                {(!loading || activeTab !== "integration") && integrationLogs.length === 0 && <TableRow><TableCell colSpan={5} className="h-24 text-center text-muted-foreground">Không có nhật ký truyền nhận phù hợp.</TableCell></TableRow>}
+                {integrationLogs.map((log) => (
+                  <TableRow key={log.id}>
+                    <TableCell>{formatDateTime(log.timestamp)}</TableCell>
+                    <TableCell className="font-medium">{log.systemName ?? "--"}</TableCell>
+                    <TableCell>{log.direction}</TableCell>
+                    <TableCell>{log.endpoint ?? "--"}</TableCell>
+                    <TableCell><Badge variant="outline" className={resultBadgeClassName(log.status)}>{log.status}</Badge></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <PaginationFooter
+              page={integrationPage}
+              pageSize={integrationPageSize}
+              totalElements={integrationTotalElements}
+              totalPages={integrationTotalPages}
+              loading={loading}
+              onPageChange={(nextPage) => void loadIntegrationLogs(nextPage)}
+              onPageSizeChange={(nextSize) => void loadIntegrationLogs(0, nextSize)}
             />
           </div>
         </TabsContent>
